@@ -7,18 +7,22 @@ def is_pure(instr):
     return False
 
 def optimize(function):
-    used = []
-    for instr in function["instrs"]:
-        if "args" in instr.keys():
-            used += instr["args"]
-
-    for idx in range(len(function["instrs"])):
-        instr = function["instrs"][idx]
-        if not "dest" in instr.keys():
-            continue
-
-        if (not instr["dest"] in used) and is_pure(instr):
-            function["instrs"][idx] = None
+    con = True
+    while con:
+        used = []
+        con = False
+	    for instr in function["instrs"]:
+	        if "args" in instr.keys():
+	            used += instr["args"]
+	
+	    for idx in range(len(function["instrs"])):
+	        instr = function["instrs"][idx]
+	        if not "dest" in instr.keys():
+	            continue
+	
+	        if (not instr["dest"] in used) and is_pure(instr):
+	            function["instrs"][idx] = None
+                con = True
 
     function["instrs"] = [instr for instr in function["instrs"] if instr not None]
 
