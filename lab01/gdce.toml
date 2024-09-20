@@ -1,15 +1,17 @@
+# which benchmarks to run
 benchmarks = '../../bril/benchmarks/**/*.bril'
+# how to extract the performance metric from stderr
 extract = 'total_dyn_inst: (\d+)'
 
 [runs.baseline]
 pipeline = [
-    "bril2json",
-    "brili -p {args}"
+  "bril2json",
+  "brili -p {args}",
 ]
 
-[runs.dce]
+[runs.gdce]
 pipeline = [
-    "bril2json",
-    "python3 gdce.py"
-    "brili -p {args}"
+  "bril2json",
+  "python3 ../../bril/examples/remove_nops/remove_nops.py",
+  "brili -p {args}",
 ]
