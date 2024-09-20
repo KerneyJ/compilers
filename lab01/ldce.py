@@ -12,7 +12,8 @@ def ldce(function):
                 continue
             if "args" in instr.keys():
                 for arg in instr["args"]:
-                    del unused[arg]
+                    if arg in unused.keys():
+                        del unused[arg]
             if "dest" in instr.keys():
                 if instr["dest"] in unused.keys():
                     del unused[instr["dest"]]
@@ -29,7 +30,9 @@ def ldce(function):
 
 if __name__ == "__main__":
     prog = json.load(sys.stdin)
+    count = sum([len(f["instrs"]) for f in prog["functions"]])
+    # print(count)
     functions = prog["functions"]
-    # functions = [gdce(f) for f in functions]
+    functions = [gdce(f) for f in functions]
     prog["functions"] = [ldce(f) for f in functions]
     json.dump(prog, sys.stdout, indent=2)
