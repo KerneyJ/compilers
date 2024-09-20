@@ -1,0 +1,3 @@
+The results from my trivial dead code elimination(gdce) and local dead code elimination are stored in gdce.csv and ldce.csv
+Source code files are lvn.py, ldce.py and gdce.py. The second columns shows how many instructions are in the file and the
+third column shows how many instructions are contained after optimization.
