@@ -81,6 +81,14 @@ def reconstruct_prog(blocks):
     return functions
 
 def opt(prog):
+    blocks = {}
+    for func in prog["functions"]:
+        blocks |= make_bb(func)
+    make_cfg(blocks)
+    for name in blocks:
+        block = blocks[name]
+        print(block)
+
     return prog
 
 if __name__ == "__main__":
