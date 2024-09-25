@@ -12,7 +12,7 @@ class bb:
         self.func_name = func_name
 
     def __str__(self):
-        return str(self.instrs)
+        return "Name: " + self.name + " Parents: " + ", ".join([p.name for p in self.parents])
 
     def __lt__(self, other):
         self.num < other.num
@@ -94,4 +94,4 @@ def opt(prog):
 if __name__ == "__main__":
     prog = json.load(sys.stdin)
     prog = opt(prog)
-    json.dump(prog, sys.stdout, indent=2)
+    # json.dump(prog, sys.stdout, indent=2)
