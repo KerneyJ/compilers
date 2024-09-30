@@ -7,6 +7,7 @@ class bb:
         self.parents = []
         self.kids = []
         self.const_table = {}
+        self.live_list = []
         self.term = self.instrs[-1]
         self.num = num
         self.func_name = func_name
@@ -26,14 +27,21 @@ class bb:
     def add_kid(self, kid):
         self.kids.append(kid)
 
-    def gather_parent_state(self):
-        pst = {}
+    def gather_parent_ct(self):
+        pct = {}
         for p in self.parents:
-            if not pst:
-                pst = p.const_table
+            if not pct:
+                pct = p.const_table
                 continue
             pst = dict(pst.items() & p.const_table.items())
         return pst
+
+    def gather_child_ll(self):
+        cll = []
+        for k in self.kids:
+            cll += k.live_list
+        cll = list(set(cll)) # remove dups
+        return cll
 
 def make_bb(function):
     num = 0
