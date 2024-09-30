@@ -1,5 +1,6 @@
 import json
 import sys
+import gdce
 
 class bb:
     TERM = ['br', 'jmp', 'ret']
@@ -31,7 +32,6 @@ class bb:
 
     def gather_parent_state(self):
         pst = {}
-        print(self.parents)
         for p in self.parents:
             if not pst:
                 pst = p.const_table
@@ -79,7 +79,7 @@ def reconstruct_prog(blocks):
     functions = []
     for name in blocks:
         block = blocks[name]
-        if block.fuc_name in ofmap.keys():
+        if block.func_name in ofmap.keys():
             ofmap[block.func_name].append(block)
         else:
             ofmap[block.func_name] = [block]
@@ -152,6 +152,9 @@ def opt(prog):
         block = blocks[name]
         print(block)
 
+    prog["functions"] = reconstruct_prog(blocks)
+    prog["functions"] = [gdce.gdce(f) for f in prog["functions"]]
+    print(prog["functions"])
     return prog
 
 if __name__ == "__main__":
