@@ -9,7 +9,7 @@ class bb:
         self.name = name
         self.parents = []
         self.kids = []
-        self.parent_state = []
+        self.const_table = {}
         self.term = self.instrs[-1]
         self.num = num
         self.func_name = func_name
@@ -28,6 +28,15 @@ class bb:
 
     def add_kid(self, kid):
         self.kids.append(kid)
+
+    def gather_parent_state(self):
+        pst = {}
+        for p in self.parents:
+            if not pst:
+                pst = p.const_table
+                continue
+            pst = dict(pst.items() & state.items())
+        return pst
 
 def make_bb(function):
     num = 0
@@ -129,14 +138,13 @@ def opt(prog):
 
     stack = [blocks[name] for name in blocks]
     while stack:
-        block = stack.pop()
-        if len(block.parent_state) != len(block.parents):
-            stack.append(block)
-            continue
-        ct = {}
-        for state in block.parent_state:
-            ct |= state
-        block, ct = 
+        block = stack.pop(0)
+        inp = block.gather_parent_state()
+        block, out = constprop(block, inp)
+        if out != inp:
+            for kid in block.kids:
+                if kid not in stack:
+                    stack.append(kid)
 
     #for name in blocks:
     #    block = blocks[name]
