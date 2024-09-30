@@ -49,7 +49,7 @@ def opt(prog):
     stack = [blocks[name] for name in blocks]
     while stack:
         block = stack.pop(0)
-        inp = block.gather_parent_state()
+        inp = block.gather_parent_ct()
         block, out = constprop(block, inp)
         if out != inp:
             for kid in block.kids:
@@ -59,11 +59,9 @@ def opt(prog):
 
     for name in blocks:
         block = blocks[name]
-        print(block)
 
     prog["functions"] = cfg.reconstruct_prog(blocks)
     prog["functions"] = [gdce.gdce(f) for f in prog["functions"]]
-    print(prog["functions"])
     return prog
 
 if __name__ == "__main__":
