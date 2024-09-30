@@ -31,11 +31,12 @@ class bb:
 
     def gather_parent_state(self):
         pst = {}
+        print(self.parents)
         for p in self.parents:
             if not pst:
                 pst = p.const_table
                 continue
-            pst = dict(pst.items() & state.items())
+            pst = dict(pst.items() & p.const_table.items())
         return pst
 
 def make_bb(function):
@@ -145,12 +146,11 @@ def opt(prog):
             for kid in block.kids:
                 if kid not in stack:
                     stack.append(kid)
+        block.const_table = out
 
-    #for name in blocks:
-    #    block = blocks[name]
-    #    print(block)
-    #    block, ct = constprop(block)
-    #    print(block, ct)
+    for name in blocks:
+        block = blocks[name]
+        print(block)
 
     return prog
 
