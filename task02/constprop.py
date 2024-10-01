@@ -57,9 +57,6 @@ def opt(prog):
                     stack.append(kid)
         block.const_table = out
 
-    for name in blocks:
-        block = blocks[name]
-
     prog["functions"] = cfg.reconstruct_prog(blocks)
     prog["functions"] = [gdce.gdce(f) for f in prog["functions"]]
     return prog
