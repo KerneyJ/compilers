@@ -2,7 +2,7 @@ import json
 import sys
 
 def is_pure(instr):
-    if instr["op"] in ["add", "mul", "sub", "div", "eq", "lt", "gt", "le", "ge", "not", "and", "or", "const"]:
+    if instr["op"] in ["add", "mul", "sub", "eq", "lt", "gt", "le", "ge", "not", "and", "or", "const"]:
         return True
     return False
 
