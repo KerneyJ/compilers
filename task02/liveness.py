@@ -2,7 +2,7 @@ import json
 import sys
 import cfg
 
-def liveness(block, ll= []):
+def liveness(block, ll = []):
     gl = []
     kl = []
     for instr in block.instrs:
@@ -28,10 +28,19 @@ def opt(prog):
     for func in prog["functions"]:
         blocks |= cfg.make_bb(func)
 
+    stack = [blocks[name] for name in blocks]
+    while stack:
+        block = stack.pop(0)
+        out = block.gather_child_ll()
+        inp = liveness(block, out)
+        if out != inp:
+            for parent in block.parents:
+                if parent not in stack:
+                    stack.append(parent)
+        block.live_list = inp
+
     for name in blocks:
-        block = blocks[name]
-        live = liveness(block)
-        print(live)
+        print(name, blocks[name].live_list)
 
     return prog
 
