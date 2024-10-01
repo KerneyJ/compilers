@@ -1,14 +1,13 @@
 import json
 import sys
 import cfg
+import gdce
 
 def liveness(block, ll = []):
     gl = []
     kl = []
     for instr in block.instrs:
         if "op" not in instr:
-            continue
-        if instr["op"] == "br":
             continue
         # go through each instruction and add the variables that
         # appear in args and subtract the variables that exist in dest
@@ -22,6 +21,17 @@ def liveness(block, ll = []):
     ll = [var for var in ll if var not in kl]
     ll += gl
     return ll
+
+def mark_dead(block):
+    ll = block.gather_child_ll()
+    ll += block.live_list
+    for idx in range(len(block.instrs)):
+        instr = block.instrs[idx]
+        if "dest" not in instr:
+            continue
+        if instr["dest"] not in ll:
+            block.instrs[idx]["dest"] = ""
+    return block
 
 def opt(prog):
     blocks = {}
@@ -40,7 +50,10 @@ def opt(prog):
         block.live_list = inp
 
     for name in blocks:
-        print(name, blocks[name].live_list)
+        blocks[name] = mark_dead(blocks[name])
+
+    prog["functions"] = cfg.reconstruct(blocks)
+    prog["functions"] = [gdce.gdce(f) for f in prog["functions"]]
 
     return prog
 
