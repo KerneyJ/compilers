@@ -33,8 +33,8 @@ class bb:
             if not pct:
                 pct = p.const_table
                 continue
-            pst = dict(pst.items() & p.const_table.items())
-        return pst
+            pct = dict(pct.items() & p.const_table.items())
+        return pct
 
     def gather_child_ll(self):
         cll = []
@@ -47,26 +47,27 @@ def make_bb(function):
     num = 0
     blocks = {}
     curr_instrs = []
-    curr_name = function["name"]
+    curr_name = "head@" + function["name"]
     for instr in function["instrs"]:
         if "op" in instr:
             curr_instrs.append(instr)
             if instr["op"] in bb.TERM:
                 blocks[curr_name] = bb(curr_instrs, curr_name, num, function["name"])
                 if instr["op"] == "jmp" or instr["op"] == "br":
-                    blocks[curr_name].kids += instr["labels"]
+                    blocks[curr_name].kids += [label + "@" + function["name"] for label in instr["labels"]]
                 curr_instrs = []
-                curr_name = "temp" + str(len(blocks))
+                curr_name = "temp" + str(len(blocks)) + "@" + function["name"]
                 num += 1
         else:
             if curr_instrs:
                 blocks[curr_name] = bb(curr_instrs, curr_name, num, function["name"])
                 num += 1
             curr_instrs = [instr]
-            curr_name = instr["label"]
+            curr_name = instr["label"] + "@" + function["name"]
     if curr_instrs:
         blocks[curr_name] = bb(curr_instrs, curr_name, num, function["name"])
         num += 1
+
 
     # make cfg
     for name in blocks:
@@ -78,7 +79,7 @@ def make_bb(function):
 
     return blocks
 
-def reconstruct_prog(blocks):
+def reconstruct_prog(blocks, prog):
     ofmap = {} # ordered functions map
     functions = []
     for name in blocks:
@@ -88,12 +89,15 @@ def reconstruct_prog(blocks):
         else:
             ofmap[block.func_name] = [block]
 
-    for name in ofmap:
+
+    for idx in range(len(prog["functions"])):
+        name = prog["functions"][idx]["name"]
+        if name not in ofmap:
+            raise Exception("looking for function not in ofmap")
+
         block_list = ofmap[name]
         block_list.sort()
         f = []
         for b in block_list:
             f += b.instrs
-        functions.append({"instrs": f, "name": name})
-
-    return functions
+        prog["functions"][idx]["instrs"] = f
