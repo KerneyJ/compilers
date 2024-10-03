@@ -1,4 +1,7 @@
 *.zip
+*.pdf
+*.csv
+*.txt
 venv/
 */__pycache__/*
 remove_nops/
