@@ -21,6 +21,9 @@ class bb:
     def __lt__(self, other):
         self.num < other.num
 
+    def __eq__(self, other):
+        return self.name == other.name
+
     def add_prnt(self, parent):
         self.parents.append(parent)
 
@@ -43,6 +46,23 @@ class bb:
         cll = list(set(cll)) # remove dups
         return cll
 
+    def gather_desc_ll(self):
+        # first get all descendants
+        desc = self.kids
+        visited = []
+        while desc:
+            node = desc.pop(0)
+            if node in visited:
+                continue
+            visited.append(node)
+            desc += [k for k in node.kids if k != self and k not in visited]
+
+        dll = []
+        for d in visited:
+            dll += d.live_list
+        dll = list(set(dll)) # remove dups
+        return dll
+
 def make_bb(function):
     num = 0
     blocks = {}
@@ -58,9 +78,10 @@ def make_bb(function):
                 curr_instrs = []
                 curr_name = "temp" + str(len(blocks)) + "@" + function["name"]
                 num += 1
-        else:
+        else: # we have a label
             if curr_instrs:
                 blocks[curr_name] = bb(curr_instrs, curr_name, num, function["name"])
+                blocks[curr_name].kids = [instr["label"] + "@" + function["name"]]
                 num += 1
             curr_instrs = [instr]
             curr_name = instr["label"] + "@" + function["name"]
@@ -72,7 +93,7 @@ def make_bb(function):
     # make cfg
     for name in blocks:
         parents = blocks[name].kids
-        for i in range(len(blocks[name].kids)):
+        for i in range(len(parents)):
             parent = blocks[name].kids[i]
             blocks[name].kids[i] = blocks[parent]
             blocks[parent].add_prnt(blocks[name])
