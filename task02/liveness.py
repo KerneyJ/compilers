@@ -2,6 +2,7 @@ import json
 import sys
 import cfg
 import gdce
+import utils
 
 def liveness(block, ll = []):
     gl = []
@@ -20,17 +21,18 @@ def liveness(block, ll = []):
     gl = list(set(gl)) # remove dups
     ll = [var for var in ll if var not in kl]
     ll += gl
-    return ll
+    return list(set(ll))
 
 def mark_dead(block):
-    ll = block.gather_child_ll()
+    ll = block.gather_desc_ll()
     ll += block.live_list
     for idx in range(len(block.instrs)):
         instr = block.instrs[idx]
         if "dest" not in instr:
             continue
         if instr["dest"] not in ll:
-            block.instrs[idx]["dest"] = ""
+            block.instrs[idx] = None
+    block.instrs = [instr for instr in block.instrs if instr is not None]
     return block
 
 def opt(prog):
@@ -43,6 +45,8 @@ def opt(prog):
         block = stack.pop(0)
         out = block.gather_child_ll()
         inp = liveness(block, out)
+        out.sort()
+        inp.sort()
         if out != inp:
             for parent in block.parents:
                 if parent not in stack:
@@ -52,12 +56,12 @@ def opt(prog):
     for name in blocks:
         blocks[name] = mark_dead(blocks[name])
 
-    prog["functions"] = cfg.reconstruct(blocks)
-    prog["functions"] = [gdce.gdce(f) for f in prog["functions"]]
+    cfg.reconstruct_prog(blocks, prog)
+    # prog["functions"] = [gdce.gdce(f) for f in prog["functions"]]
 
     return prog
 
 if __name__ == "__main__":
     prog = json.load(sys.stdin)
     prog = opt(prog)
-    # json.dump(prog, sys.stdout, indent=2)
+    json.dump(prog, sys.stdout, indent=2)
