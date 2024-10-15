@@ -11,6 +11,7 @@ class bb:
         self.term = self.instrs[-1]
         self.num = num
         self.func_name = func_name
+        self.dominates = []
 
     def __str__(self):
         s = "Name: " + self.name + " Parents: " + ", ".join([p.name for p in self.parents]) + " Children: " + ", ".join([k.name for k in self.kids]) + "\n"
@@ -23,6 +24,9 @@ class bb:
 
     def __eq__(self, other):
         return self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)
 
     def add_prnt(self, parent):
         self.parents.append(parent)
@@ -122,3 +126,40 @@ def reconstruct_prog(blocks, prog):
         for b in block_list:
             f += b.instrs
         prog["functions"][idx]["instrs"] = f
+
+def dominate(block):
+    paths = []
+    def dfs(b, p, paths):
+        path = p + [b]
+        if not b.parents:
+            print("returning", path)
+            paths.append(path)
+            return
+        for parent in b.parents:
+            print(b.name, parent.name)
+            if parent in path:
+                path = path + [parent]
+                for grandparent in parent.parents:
+                    if grandparent in path:
+                        continue
+                    dfs(grandparent, path, paths)
+                continue
+            dfs(parent, path, paths)
+
+    if block.name == "loop@main":
+        dfs(block, [], paths)
+        print(block.name, len(paths))
+        for path in paths:
+            print("\t", end="")
+            for b in path:
+                print(b.name, end=", ")
+            print()
+
+        spaths = [set(p) for p in paths]
+        dom = spaths[0]
+        for spath in spaths:
+            dom &= spath
+        return dom
+
+def df_b(block):
+    pass
