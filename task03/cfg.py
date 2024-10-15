@@ -132,11 +132,9 @@ def dominate(block):
     def dfs(b, p, paths):
         path = p + [b]
         if not b.parents:
-            print("returning", path)
             paths.append(path)
             return
         for parent in b.parents:
-            print(b.name, parent.name)
             if parent in path:
                 path = path + [parent]
                 for grandparent in parent.parents:
@@ -146,20 +144,13 @@ def dominate(block):
                 continue
             dfs(parent, path, paths)
 
-    if block.name == "loop@main":
-        dfs(block, [], paths)
-        print(block.name, len(paths))
-        for path in paths:
-            print("\t", end="")
-            for b in path:
-                print(b.name, end=", ")
-            print()
+    dfs(block, [], paths)
 
-        spaths = [set(p) for p in paths]
-        dom = spaths[0]
-        for spath in spaths:
-            dom &= spath
-        return dom
+    spaths = [set(p) for p in paths]
+    dom = spaths[0]
+    for spath in spaths:
+        dom &= spath
+    return dom
 
 def df_b(block):
     pass
