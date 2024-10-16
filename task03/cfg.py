@@ -127,7 +127,7 @@ def reconstruct_prog(blocks, prog):
             f += b.instrs
         prog["functions"][idx]["instrs"] = f
 
-def dominate(block):
+def dominate(block: bb):
     paths = []
     def dfs(b, p, paths):
         path = p + [b]
@@ -150,7 +150,14 @@ def dominate(block):
     dom = spaths[0]
     for spath in spaths:
         dom &= spath
-    return dom
 
-def df_b(block):
-    pass
+    for dominator in dom:
+        dominator.dominates.append(block)
+
+def df_b(b: bb, blocks: dict[str, bb]):
+    df = []
+    for name in blocks:
+        block = blocks[name]
+        if (block not in b.dominates) and len(set(block.parents) & set(b.dominates)) > 0:
+            df.append(block)
+    return df
