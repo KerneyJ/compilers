@@ -3,13 +3,7 @@ import sys
 import cfg
 import gdce
 import utils
-"""
-'op': 'phi',
-                'dest': phi_dests[block][dest],
-                'type': types[dest],
-                'labels': [p[0] for p in pairs],
-                'args': [p[1] for p in pairs]
-"""
+
 def insert_phi(dest: str, typ: str, labels: list[str], args: list[str], block: cfg.bb):
     instr = {"op": "phi",
              "dest": dest,
@@ -18,8 +12,21 @@ def insert_phi(dest: str, typ: str, labels: list[str], args: list[str], block: c
              "args": args}
     bb.instrs.insert(0, instr)
 
-def defs(variable, blocks):
-    pass
+def defs(blocks):
+    map = {}
+    for name in blocks:
+        block = blocks[name]
+        for instr in block.instrs:
+            if "dest" not in instr:
+                continue
+            dest = instr["dest"]
+            if dest in map:
+                map[dest].add(block)
+            else:
+                map[dest] = set([block])
+
+    print(map)
+    return map
 
 def to_ssa(blocks):
     for name in blocks:
@@ -29,6 +36,8 @@ def to_ssa(blocks):
     for name in blocks:
         df = cfg.df_b(blocks[name], blocks)
         # print(name, [block.name for block in blocks[name].dominates])
+
+    defs(blocks)
 
 def opt(prog):
     blocks = {}
