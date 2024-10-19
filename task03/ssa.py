@@ -25,7 +25,6 @@ def defs(blocks):
             else:
                 map[dest] = set([block])
 
-    print(map)
     return map
 
 def to_ssa(blocks):
@@ -35,7 +34,6 @@ def to_ssa(blocks):
 
     for name in blocks:
         df = cfg.df_b(blocks[name], blocks)
-        # print(name, [block.name for block in blocks[name].dominates])
 
     defs(blocks)
 
