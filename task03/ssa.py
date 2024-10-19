@@ -12,7 +12,7 @@ def insert_phi(dest: str, typ: str, labels: list[str], args: list[str], block: c
              "args": args}
     bb.instrs.insert(0, instr)
 
-def defs(blocks):
+def get_defs(blocks):
     map = {}
     for name in blocks:
         block = blocks[name]
@@ -32,10 +32,20 @@ def to_ssa(blocks):
         block = blocks[name]
         cfg.dominate(block)
 
+    dfs = {}
     for name in blocks:
         df = cfg.df_b(blocks[name], blocks)
+        dfs[name] = df
 
-    defs(blocks)
+    print(dfs)
+    defs = get_defs(blocks)
+    for var in defs:
+        print(var, end=": ")
+        for def_block in defs[var]:
+            print(def_block.name, end=" => ")
+            for df_block in dfs[def_block.name]:
+                print(df_block.name)
+        print()
 
 def opt(prog):
     blocks = {}
