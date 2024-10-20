@@ -67,6 +67,18 @@ class bb:
         dll = list(set(dll)) # remove dups
         return dll
 
+    def gather_phi(self):
+        # returns a list of indexes of the phi instructions
+        phi_location = []
+        for idx in range(len(self.instrs)):
+            instr = self.instrs[idx]
+            if "op" not in instr:
+                continue
+            if instr["op"] == "phi"
+                phi_location.append(idx)
+
+        return  phi_location
+
 def make_bb(function):
     num = 0
     blocks = {}
