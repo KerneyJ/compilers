@@ -74,7 +74,7 @@ class bb:
             instr = self.instrs[idx]
             if "op" not in instr:
                 continue
-            if instr["op"] == "phi"
+            if instr["op"] == "phi":
                 phi_location.append(idx)
 
         return  phi_location
