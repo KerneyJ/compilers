@@ -10,10 +10,13 @@ def insert_phi(dest: str, typ: str, labels: list[str], args: list[str], block: c
              "type": typ,
              "labels": labels,
              "args": args}
-    bb.instrs.insert(0, instr)
+    block.instrs.insert(0, instr)
 
-def modify_phi(block: cfg.bb):
-    pass
+def modify_phi(index: int, block: cfg.bb, label, arg):
+    phi_instr = block.instrs[index]
+    phi_instr["labels"].append(label)
+    phi_instr["args"].append(arg)
+    block.instrs[index] = phi_instr
 
 def find_phi(var: str, block: cfg.bb):
     for idx in range(len(block.instrs)):
@@ -53,16 +56,15 @@ def to_ssa(blocks):
         df = cfg.df_b(blocks[name], blocks)
         dfs[name] = df
 
-    print(dfs)
     defs = get_defs(blocks)
     for var in defs:
-        print(var, end=": ")
         for def_block in defs[var][1]:
-            print(def_block.name, end=" => ")
             for df_block in dfs[def_block.name]:
-                print(df_block.name, end=", ")
-            print()
-        print()
+                phi_idx = find_phi(var, df_block)
+                if phi_idx >= 0:
+                    modify_phi(phi_idx, df_block, def_block.name.split("@")[0], var)
+                else:
+                    insert_phi(var, defs[var][0], [def_block.name.split("@")[0]], [var], df_block)
 
 def opt(prog):
     blocks = {}
@@ -78,4 +80,4 @@ def opt(prog):
 if __name__ == "__main__":
     prog = json.load(sys.stdin)
     prog = opt(prog)
-#    json.dump(prog, sys.stdout, indent=2)
+    json.dump(prog, sys.stdout, indent=2)
