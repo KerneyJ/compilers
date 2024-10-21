@@ -6,7 +6,7 @@ import utils
 
 def insert_phi(dest: str, typ: str, block: cfg.bb, def_blocks: list[cfg.bb]):
     def_preds = list(set(block.parents) & set(def_blocks)) # all predecessors of block that define dest
-    if len(def_preds):
+    if len(def_preds) < 2:
         return False
     labels = [block.name.split("@")[0] for block in def_preds]
     instr = {
@@ -118,7 +118,7 @@ def rename(entry: cfg.bb, params: dict[str, dict[str, str]], blocks: dict[str, c
                     kid.instrs[phi_idx] = phi
                 else:
                     args = phi["args"]
-                    # print(label, phi["labels"], phi)
+                    print(label, phi["labels"], phi)
                     arg_idx = phi["labels"].index(label)
                     args[arg_idx] = "__undefined"
                     phi["args"] = args
