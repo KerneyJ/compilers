@@ -157,6 +157,8 @@ def to_ssa(blocks: dict[str, cfg.bb], functions: dict[str, dict[str, cfg.bb]]):
     for name in functions:
         args, func = functions[name]
         entry = func["entry@" + name]
+        if "label" not in entry.instrs[0]:
+            entry.instrs.insert(0, {"label": "entry"})
         rename(entry, args, func)
 
 
