@@ -154,7 +154,7 @@ def to_ssa(blocks: dict[str, cfg.bb], functions: dict[str, dict[str, cfg.bb]]):
         rename(entry, args, func)
 
 
-def opt(prog):
+def test_ssa(prog):
     blocks = {}
     functions = {}
     for func in prog["functions"]:
@@ -173,5 +173,5 @@ def opt(prog):
 
 if __name__ == "__main__":
     prog = json.load(sys.stdin)
-    prog = opt(prog)
+    prog = test_ssa(prog)
     json.dump(prog, sys.stdout, indent=2)
