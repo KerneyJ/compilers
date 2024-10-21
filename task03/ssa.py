@@ -6,6 +6,8 @@ import utils
 
 def insert_phi(dest: str, typ: str, block: cfg.bb, def_blocks: list[cfg.bb]):
     def_preds = list(set(block.parents) & set(def_blocks)) # all predecessors of block that define dest
+    if len(def_preds):
+        return False
     labels = [block.name.split("@")[0] for block in def_preds]
     instr = {
              "args": [dest for i in range(len(labels))],
@@ -19,6 +21,7 @@ def insert_phi(dest: str, typ: str, block: cfg.bb, def_blocks: list[cfg.bb]):
         block.instrs.insert(1, instr)
     else:
         block.instrs.insert(0, instr)
+    return True
 
 def find_phi(var: str, block: cfg.bb):
     for idx in range(len(block.instrs)):
@@ -102,7 +105,6 @@ def rename(entry: cfg.bb, params: dict[str, dict[str, str]], blocks: dict[str, c
             kid_phis = kid.gather_phi()
             for phi_idx in kid_phis:
                 phi = kid.instrs[phi_idx]
-
                 dest = phi["dest"] if phi["dest"] in var_stack else find_var(phi["dest"], var_stack)
                 if dest:
                     stack_pos = 0 # init to top of stack
@@ -116,6 +118,7 @@ def rename(entry: cfg.bb, params: dict[str, dict[str, str]], blocks: dict[str, c
                     kid.instrs[phi_idx] = phi
                 else:
                     args = phi["args"]
+                    # print(label, phi["labels"], phi)
                     arg_idx = phi["labels"].index(label)
                     args[arg_idx] = "__undefined"
                     phi["args"] = args
@@ -144,9 +147,8 @@ def to_ssa(blocks: dict[str, cfg.bb], functions: dict[str, dict[str, cfg.bb]]):
         for def_block in defs[var][1]:
             for df_block in dfs[def_block.name]:
                 if find_phi(var, df_block) < 0:
-                    insert_phi(var, defs[var][0], df_block, defs[var][1])
-                defs[var][1].append(df_block)
-
+                    if insert_phi(var, defs[var][0], df_block, defs[var][1]):
+                        defs[var][1].append(df_block)
 
     for name in functions:
         args, func = functions[name]

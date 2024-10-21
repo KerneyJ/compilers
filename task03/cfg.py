@@ -83,7 +83,7 @@ def make_bb(function):
     num = 0
     blocks = {}
     curr_instrs = []
-    curr_name = "head@" + function["name"]
+    curr_name = "entry@" + function["name"]
     for instr in function["instrs"]:
         if "op" in instr:
             curr_instrs.append(instr)
