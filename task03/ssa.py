@@ -41,8 +41,8 @@ def find_var(var: str, vs: dict[str: list[str]]):
         stack = vs[p]
         for i in range(len(stack)):
             if stack[i] == var:
-                return (p, i)
-    return ()
+                return p
+    return ""
 
 def get_defs(blocks: dict[str, cfg.bb]):
     map = {}
@@ -61,7 +61,6 @@ def get_defs(blocks: dict[str, cfg.bb]):
     return map
 
 def rename(entry: cfg.bb, params: dict[str, dict[str, str]], blocks: dict[str, cfg.bb]):
-
     var_count = {}
     def fresh_name(var: str, vs: dict[str: list[str]]):
         if var not in var_count:
@@ -84,6 +83,8 @@ def rename(entry: cfg.bb, params: dict[str, dict[str, str]], blocks: dict[str, c
         label = block.name.split("@")[0]
         my_var_stack = copy.deepcopy(var_stack)
 
+
+        # rename phi dest
         for phi_idx in block.gather_phi():
             instr = block.instrs[phi_idx]
             dest = instr["dest"]
@@ -91,6 +92,7 @@ def rename(entry: cfg.bb, params: dict[str, dict[str, str]], blocks: dict[str, c
             instr["dest"] = new_name
             block.instrs[phi_idx] = instr
 
+        # rename args and dest in other instructions
         for idx in range(len(block.instrs)):
             instr = block.instrs[idx]
             if "op" in instr and instr["op"] == "phi":
@@ -106,19 +108,17 @@ def rename(entry: cfg.bb, params: dict[str, dict[str, str]], blocks: dict[str, c
 
             block.instrs[idx] = instr
 
+
+        # rename child phi functions
         for kid in block.kids:
             kid_phis = kid.gather_phi()
             for phi_idx in kid_phis:
                 phi = kid.instrs[phi_idx]
                 dest = phi["dest"] if phi["dest"] in my_var_stack else find_var(phi["dest"], my_var_stack)
                 if dest:
-                    stack_pos = 0 # init to top of stack
-                    if isinstance(dest, tuple):
-                        stack_pos = dest[1]
-                        dest = dest[0]
                     args = phi["args"]
                     arg_idx = phi["labels"].index(label)
-                    args[arg_idx] = my_var_stack[dest][stack_pos]
+                    args[arg_idx] = my_var_stack[dest][0]
                     phi["args"] = args
                     kid.instrs[phi_idx] = phi
                 else:
@@ -128,6 +128,7 @@ def rename(entry: cfg.bb, params: dict[str, dict[str, str]], blocks: dict[str, c
                     phi["args"] = args
                     kid.instrs[phi_idx] = phi
 
+        # rename kids that block dominates
         for kid in block.kids:
             if kid in block.dominates:
                 rename_helper(kid, my_var_stack)
