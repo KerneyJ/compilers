@@ -4,21 +4,21 @@ import cfg
 import gdce
 import utils
 
-def insert_phi(dest: str, typ: str, labels: list[str], args: list[str], block: cfg.bb):
+def insert_phi(dest: str, typ: str, block: cfg.bb, def_blocks: list[cfg.bb]):
+    def_preds = list(set(block.parents) & set(def_blocks)) # all predecessors of block that define dest
+    labels = [block.name.split("@")[0] for block in def_preds]
     instr = {
-             "args": args,
+             "args": [dest for i in range(len(labels))],
              "dest": dest,
              "labels": labels,
              "op": "phi",
              "type": typ,
              }
-    block.instrs.insert(0, instr)
 
-def modify_phi(index: int, block: cfg.bb, label: str, arg: str):
-    phi_instr = block.instrs[index]
-    phi_instr["labels"].append(label)
-    phi_instr["args"].append(arg)
-    block.instrs[index] = phi_instr
+    if "label" in block.instrs[0]:
+        block.instrs.insert(1, instr)
+    else:
+        block.instrs.insert(0, instr)
 
 def find_phi(var: str, block: cfg.bb):
     for idx in range(len(block.instrs)):
@@ -31,6 +31,15 @@ def find_phi(var: str, block: cfg.bb):
             return idx
     return -1
 
+def find_var(var: str, vs: dict[str: (int, list[str])]):
+    potentials = [base for base in vs if base in var]
+    for p in potentials:
+        stack = vs[p][1]
+        for i in range(len(stack)):
+            if stack[i] == var:
+                return (p, i)
+    return ()
+
 def get_defs(blocks: dict[str, cfg.bb]):
     map = {}
     for name in blocks:
@@ -41,9 +50,9 @@ def get_defs(blocks: dict[str, cfg.bb]):
             dest = instr["dest"]
             typ = instr["type"]
             if dest in map:
-                map[dest][1].add(block)
+                map[dest][1].append(block)
             else:
-                map[dest] = (typ, set([block]))
+                map[dest] = (typ, [block])
 
     return map
 
@@ -72,10 +81,13 @@ def rename(entry: cfg.bb, params: dict[str, dict[str, str]], blocks: dict[str, c
             dest = instr["dest"]
             new_name = fresh_name(dest, var_stack)
             instr["dest"] = new_name
-            block.instr[phi_idx] = instr
+            block.instrs[phi_idx] = instr
 
         for idx in range(len(block.instrs)):
             instr = block.instrs[idx]
+            if "op" in instr and instr["op"] == "phi":
+                continue
+
             if "args" in instr:
                 new_args = [var_stack[arg][1][0] for arg in instr["args"]]
                 instr["args"] = new_args
@@ -90,11 +102,16 @@ def rename(entry: cfg.bb, params: dict[str, dict[str, str]], blocks: dict[str, c
             kid_phis = kid.gather_phi()
             for phi_idx in kid_phis:
                 phi = kid.instrs[phi_idx]
-                dest = phi["dest"]
-                if var_stack[dest]:
+
+                dest = phi["dest"] if phi["dest"] in var_stack else find_var(phi["dest"], var_stack)
+                if dest:
+                    stack_pos = 0 # init to top of stack
+                    if isinstance(dest, tuple):
+                        stack_pos = dest[1]
+                        dest = dest[0]
                     args = phi["args"]
                     arg_idx = phi["labels"].index(label)
-                    args[arg_idx] = var_stack[dest][1][0]
+                    args[arg_idx] = var_stack[dest][1][stack_pos]
                     phi["args"] = args
                     kid.instrs[phi_idx] = phi
                 else:
@@ -109,7 +126,6 @@ def rename(entry: cfg.bb, params: dict[str, dict[str, str]], blocks: dict[str, c
                 rename_helper(kid, var_stack)
 
     rename_helper(entry, var_stack)
-
 
     # if len(rename) < len(blocks): raise Exception("Some block was not renamed")
 
@@ -127,11 +143,10 @@ def to_ssa(blocks: dict[str, cfg.bb], functions: dict[str, dict[str, cfg.bb]]):
     for var in defs:
         for def_block in defs[var][1]:
             for df_block in dfs[def_block.name]:
-                phi_idx = find_phi(var, df_block)
-                if phi_idx >= 0:
-                    modify_phi(phi_idx, df_block, def_block.name.split("@")[0], var)
-                else:
-                    insert_phi(var, defs[var][0], [def_block.name.split("@")[0]], [var], df_block)
+                if find_phi(var, df_block) < 0:
+                    insert_phi(var, defs[var][0], df_block, defs[var][1])
+                defs[var][1].append(df_block)
+
 
     for name in functions:
         args, func = functions[name]
@@ -145,7 +160,10 @@ def opt(prog):
     for func in prog["functions"]:
         func_blocks = cfg.make_bb(func)
         blocks |= func_blocks
-        functions[func["name"]] = (func["args"], func_blocks)
+        if "args" in func:
+            functions[func["name"]] = (func["args"], func_blocks)
+        else:
+            functions[func["name"]] = ({}, func_blocks)
 
     to_ssa(blocks, functions)
 
