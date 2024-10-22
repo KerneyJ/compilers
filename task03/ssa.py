@@ -35,7 +35,7 @@ def find_phi(var: str, block: cfg.bb):
             return idx
     return -1
 
-def find_var(var: str, vs: dict[str: list[str]]):
+def find_var(var: str, vs: dict[str, list[str]]):
     potentials = [base for base in vs if base in var]
     for p in potentials:
         stack = vs[p]
@@ -59,6 +59,28 @@ def get_defs(blocks: dict[str, cfg.bb]):
                 map[dest] = (typ, [block])
 
     return map
+
+def get_def(block: cfg.bb):
+    vars = []
+    for instr in block.instrs:
+        if "dest" not in instr:
+            continue
+        dest = instr["dest"]
+        typ = instr["type"]
+        vars.append([dest, typ])
+    return vars
+
+def check_var(var: str, block: cfg.bb, var_stack: dict[str, list[str]]):
+    if var not in var_stack:
+        var = find_var(var, var_stack)
+    defs = get_def(block)
+    for idx in range(len(defs)):
+        if defs[idx][0] not in var_stack:
+            defs[idx][0] = find_var(defs[idx][0], var_stack)
+    for d in defs:
+        if var in d:
+            return True
+    return False
 
 def rename(entry: cfg.bb, params: dict[str, dict[str, str]], blocks: dict[str, cfg.bb]):
     var_count = {}
@@ -115,7 +137,7 @@ def rename(entry: cfg.bb, params: dict[str, dict[str, str]], blocks: dict[str, c
             for phi_idx in kid_phis:
                 phi = kid.instrs[phi_idx]
                 dest = phi["dest"] if phi["dest"] in my_var_stack else find_var(phi["dest"], my_var_stack)
-                if dest:
+                if check_var(dest, block, my_var_stack):
                     args = phi["args"]
                     arg_idx = phi["labels"].index(label)
                     args[arg_idx] = my_var_stack[dest][0]
