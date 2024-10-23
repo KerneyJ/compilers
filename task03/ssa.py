@@ -82,7 +82,7 @@ def check_var(var: str, block: cfg.bb, var_stack: dict[str, list[str]]):
             return True
     return False
 
-def rename(entry: cfg.bb, params: dict[str, dict[str, str]], blocks: dict[str, cfg.bb]):
+def rename(entry: cfg.bb, params: list[dict[str, str]], blocks: dict[str, cfg.bb]):
     var_count = {}
     def fresh_name(var: str, vs: dict[str: list[str]]):
         if var not in var_count:
@@ -192,7 +192,7 @@ def test_ssa(prog):
         if "args" in func:
             functions[func["name"]] = (func["args"], func_blocks)
         else:
-            functions[func["name"]] = ({}, func_blocks)
+            functions[func["name"]] = ([], func_blocks)
 
     to_ssa(blocks, functions)
 
