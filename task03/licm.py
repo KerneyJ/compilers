@@ -20,10 +20,27 @@ def get_loops(entry: cfg.bb, blocks: dict[str, cfg.bb]):
     # maybe duplicates could be a problem???
     return loops
 
+# for these current uses head should always be the loop head
+def collect_defs(inp: cfg.bb, head: cfg.bb): # collects defs from block up to some head(head most dominate b)
+    defs = []
+    stack = [b for b in inp.parents] # init stack to parents of b
+    while stack:
+        block = stack.pop(0)
+        if block not in head.dominates or block == head: # if block is not dominated by the head then we do not consider it
+            continue
+        block_defs = ssa.get_def(block)
+        defs += block_defs
+        for parent in block.parents:
+            stack.append(parent)
+    return [d[0] for d in defs]
+
+
 def move_invariant(block: cfg.bb, loop_head: cfg.bb):
     change = True
     while change:
         change = False
+        defs_so_far = collect_defs(block, loop_head)
+        print(defs_so_far)
         for idx in range(len(block.instrs)):
             instr = block.instrs[idx]
             if "dest" not in instr or "args" not in instr:
@@ -32,7 +49,7 @@ def move_invariant(block: cfg.bb, loop_head: cfg.bb):
                 continue
             args = instr["args"]
             dest = instr["dest"]
-            print(dest, args)
+            # print(dest, args)
 
 def licm(blocks: dict[str, cfg.bb], functions: dict[str, dict[str, cfg.bb]]):
     loops = [] # a list of pairs where the pair[0] = loop header, pair[1] = last block
@@ -45,7 +62,7 @@ def licm(blocks: dict[str, cfg.bb], functions: dict[str, dict[str, cfg.bb]]):
 
     for loop in loops:
         head, tail = loop
-        print(head.name, tail.name)
+        print("processing this loop", head.name, tail.name)
         # if it dominates the tail it must execute
         considered_blocks = set()
         stack = [head]
