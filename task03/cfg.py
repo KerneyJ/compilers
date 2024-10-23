@@ -1,3 +1,5 @@
+import copy
+
 class bb:
     TERM = ['br', 'jmp', 'ret']
 
@@ -20,7 +22,7 @@ class bb:
         return s
 
     def __lt__(self, other):
-        self.num < other.num
+        return self.num < other.num
 
     def __eq__(self, other):
         return self.name == other.name
@@ -115,6 +117,20 @@ def make_bb(function):
             blocks[parent].add_prnt(blocks[name])
 
     return blocks
+
+def insert_block(block: bb, child: bb, blocks):
+    block.parents = copy.deepcopy(child.parents)
+    child.parents = [block]
+    block.kids = [child]
+    for parent in block.parents:
+        for idx in range(len(parent.kids)):
+            if parent.kids[idx] == child:
+                parent.kids[idx] = block
+    for name in blocks:
+        if blocks[name].num > child.num:
+            blocks[name].num += 1
+    block.num = child.num
+    child.num += 1
 
 def reconstruct_prog(blocks, prog):
     ofmap = {} # ordered functions map
