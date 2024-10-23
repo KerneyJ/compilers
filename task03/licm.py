@@ -20,27 +20,21 @@ def get_loops(entry: cfg.bb, blocks: dict[str, cfg.bb]):
     # maybe duplicates could be a problem???
     return loops
 
-# for these current uses head should always be the loop head
-def collect_defs(inp: cfg.bb, head: cfg.bb): # collects defs from block up to some head(head most dominate b)
-    defs = []
-    stack = [b for b in inp.parents] # init stack to parents of b
+def pre_loop_defs(loop_head: cfg.bb):
+    pld = []
+    stack = [parent for parent in loop_head.parents if parent not in loop_head.dominates]
     while stack:
         block = stack.pop(0)
-        if block not in head.dominates or block == head: # if block is not dominated by the head then we do not consider it
-            continue
-        block_defs = ssa.get_def(block)
-        defs += block_defs
-        for parent in block.parents:
-            stack.append(parent)
-    return [d[0] for d in defs]
+        for instr in block.instrs:
+            if "dest" not in instr:
+                continue
+            pld.append(instr["dest"])
+    return pld
 
-
-def move_invariant(block: cfg.bb, loop_head: cfg.bb):
+def move_invariant(block: cfg.bb, loop_head: cfg.bb, preloop_instrs, preloop_vars):
     change = True
     while change:
         change = False
-        defs_so_far = collect_defs(block, loop_head)
-        print(defs_so_far)
         for idx in range(len(block.instrs)):
             instr = block.instrs[idx]
             if "dest" not in instr or "args" not in instr:
@@ -49,7 +43,15 @@ def move_invariant(block: cfg.bb, loop_head: cfg.bb):
                 continue
             args = instr["args"]
             dest = instr["dest"]
-            # print(dest, args)
+            raised = True
+            for arg in args:
+                if arg not in preloop_vars:
+                    raised = False
+            if raised:
+                preloop_instrs.append(instr)
+                block.instrs[idx] = None
+                preloop_vars.append(dest)
+    block.instrs = [instr for instr in block.instrs if instr] # clear nones
 
 def licm(blocks: dict[str, cfg.bb], functions: dict[str, dict[str, cfg.bb]]):
     loops = [] # a list of pairs where the pair[0] = loop header, pair[1] = last block
@@ -62,14 +64,18 @@ def licm(blocks: dict[str, cfg.bb], functions: dict[str, dict[str, cfg.bb]]):
 
     for loop in loops:
         head, tail = loop
-        print("processing this loop", head.name, tail.name)
+        func_name = head.func_name
+        preloop_instrs = [{"label": "_preheader"}]
+        # pre_header = cfg.bb([], "_looppreheader@" + func_name, -1, func_name) # TODO need to figure out how to insert blocks
         # if it dominates the tail it must execute
         considered_blocks = set()
+        preloop_vars = pre_loop_defs(head)
         stack = [head]
         while stack:
             block = stack.pop(0)
-            if tail in block.dominates:
-                considered_blocks.add(block)
+            if tail in block.dominates: # probably call considered blocks here because this is already because this has a notion of order
+                move_invariant(block, head, preloop_instrs, preloop_vars)
+                # considered_blocks.add(block)
                 if block == tail:
                     continue
                 for kid in block.kids:
@@ -78,11 +84,13 @@ def licm(blocks: dict[str, cfg.bb], functions: dict[str, dict[str, cfg.bb]]):
                 for kid in block.kids:
                     if kid not in block.dominates:
                         stack.append(kid)
-
-        for block in considered_blocks:
-            move_invariant(block, head)
         # if block does not dominate tail then I should consider all the children of block that it does not dominate
-        print()
+        # construct new preaheader with these instructions
+        name = "_preheader@" + func_name
+        preheader = cfg.bb(preloop_instrs, name, -1, func_name)
+        cfg.insert_block(preheader, head, blocks)
+        blocks[name] = preheader
+    return blocks
 
 def opt(prog):
     blocks = {}
@@ -96,7 +104,7 @@ def opt(prog):
             functions[func["name"]] = ([], func_blocks)
 
     ssa.to_ssa(blocks, functions)
-    licm(blocks, functions)
+    blocks = licm(blocks, functions)
 
     cfg.reconstruct_prog(blocks, prog)
     return prog
@@ -104,4 +112,4 @@ def opt(prog):
 if __name__ == "__main__":
     prog = json.load(sys.stdin)
     prog = opt(prog)
-    # json.dump(prog, sys.stdout, indent=2)
+    json.dump(prog, sys.stdout, indent=2)
