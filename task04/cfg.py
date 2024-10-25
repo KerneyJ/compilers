@@ -2,6 +2,7 @@ import copy
 
 class bb:
     TERM = ['br', 'jmp', 'ret']
+    COUNTER = 0
 
     def __init__(self, instrs, name, num, func_name):
         self.instrs = instrs
