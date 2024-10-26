@@ -29,7 +29,6 @@ def analyze_block(block: cfg.bb, old_var_to_mem: dict[str, list[int]], parent_va
             else:
                 var_to_mem[arg["name"]] = [cfg.bb.COUNTER]
                 cfg.bb.COUNTER += 1
-            # print("got pointer", arg["name"])
     var_to_mem |= parent_var_map
 
     for instr in block.instrs:
@@ -37,7 +36,6 @@ def analyze_block(block: cfg.bb, old_var_to_mem: dict[str, list[int]], parent_va
             continue
 
         if "alloc" in instr["op"]:
-            # print("alloc", instr)
             # name allocation and put it in the var map
             dest = instr["dest"]
             var_to_mem[dest] = [cfg.bb.COUNTER]
@@ -46,7 +44,7 @@ def analyze_block(block: cfg.bb, old_var_to_mem: dict[str, list[int]], parent_va
             dest = instr["dest"]
             arg = instr["args"][0]
             if arg not in var_to_mem:
-                contine
+                continue
             var_to_mem[dest] = var_to_mem[arg]
         elif "ptradd" in instr["op"]:
             dest = instr["dest"]
@@ -69,16 +67,14 @@ def alias(blocks: dict[str, cfg.bb], args: dict[str, list]):
     stack = [blocks[name] for name in blocks]
     while stack:
         block = stack.pop(0)
-        print("processing block", block.name)
         meet = meet_parents([block_mem_info[parent.name] for parent in block.parents if parent.name in block_mem_info])
         var_map = analyze_block(block, block_mem_info[block.name] if block.name in block_mem_info else {}, meet, args[block.func_name] if "entry" in block.name else None)
-        print(var_map)
-
         if block.name not in block_mem_info or var_map != block_mem_info[block.name]:
             block_mem_info[block.name] = var_map
             for kid in block.kids:
                 if kid not in stack:
                     stack.append(kid)
+    print(block_mem_info)
 
 
 def opt(prog):
@@ -86,7 +82,10 @@ def opt(prog):
     args = {}
     for func in prog["functions"]:
         blocks |= cfg.make_bb(func)
-        args[func["name"]] = func["args"]
+        if "args" in func:
+            args[func["name"]] = func["args"]
+        else:
+            args[func["name"]] = []
 
     alias(blocks, args)
 
