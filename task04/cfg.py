@@ -6,15 +6,21 @@ class bb:
 
     def __init__(self, instrs, name, num, func_name):
         self.instrs = instrs
+        self.func_name = func_name
         self.name = name
+        self.num = num
+        self.term = self.instrs[-1]
+
         self.parents = []
         self.kids = []
         self.const_table = {}
+
         self.live_list = []
-        self.term = self.instrs[-1]
-        self.num = num
-        self.func_name = func_name
+
         self.dominates = []
+
+        self.mem_info = {} # maping of variables to allocations
+        self.live_alloc = [] # list of allocaitons made live by a load
 
     def __str__(self):
         s = "Name: " + self.name + " Parents: " + ", ".join([p.name for p in self.parents]) + " Children: " + ", ".join([k.name for k in self.kids]) + "\n"
