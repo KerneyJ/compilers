@@ -29,12 +29,16 @@ def analyze_block(block: cfg.bb, old_var_to_mem: dict[str, list[int]], parent_va
             else:
                 var_to_mem[arg["name"]] = [cfg.bb.COUNTER]
                 cfg.bb.COUNTER += 1
-    var_to_mem |= parent_var_map
+
+    for var in parent_var_map:
+        if var in var_to_mem:
+            var_to_mem[var] += parent_var_map[var]
+        else:
+            var_to_mem[var] = parent_var_map[var]
 
     for instr in block.instrs:
         if "op" not in instr:
             continue
-
         if "alloc" in instr["op"]:
             # name allocation and put it in the var map
             dest = instr["dest"]
@@ -74,7 +78,7 @@ def alias(blocks: dict[str, cfg.bb], args: dict[str, list]):
             for kid in block.kids:
                 if kid not in stack:
                     stack.append(kid)
-    print(block_mem_info)
+    # print(block_mem_info)
 
 
 def opt(prog):
