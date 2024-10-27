@@ -19,7 +19,7 @@ class bb:
 
         self.dominates = []
 
-        self.mem_info = {} # maping of variables to allocations
+        self.var_to_mem = {} # maping of variables to allocations
         self.live_alloc = [] # list of allocaitons made live by a load
 
     def __str__(self):
