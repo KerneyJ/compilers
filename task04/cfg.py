@@ -28,7 +28,9 @@ class bb:
         self.live_alloc = [] # list of allocaitons made live by a load
 
     def __str__(self):
-        s = "Name: " + self.name + " Parents: " + ", ".join([p.name for p in self.parents]) + " Children: " + ", ".join([k.name for k in self.kids]) + "\n"
+        s = "Name: " + self.name + " Parents: {" + ", ".join([p.name for p in self.parents]) + "} Children: {" + ", ".join([k.name for k in self.kids]) +\
+            "} Call Parents: {" + ", ".join([p.name for p in self.call_parents]) + "} Call Children: {" + ", ".join([k.name for k in self.call_kids]) +\
+             "} Return Parents: {" + ", ".join([p.name for p in self.call_parents]) + "} Return Children: {" + ", ".join([k.name for k in self.call_kids]) + "}\n"
         for instr in self.instrs:
             s += "\t" + str(instr) + "\n"
         return s
