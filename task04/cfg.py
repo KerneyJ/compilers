@@ -138,17 +138,81 @@ def make_bb(function):
     if curr_instrs:
         blocks[curr_name] = bb(curr_instrs, curr_name, num, function["name"])
         num += 1
+    if caller_name:
+        if curr_name in blocks:
+            blocks[caller_name].kids = [curr_name]
+            caller_name = None
+        else:
+            curr_instrs = [{"op": "ret"}]
+            blocks[curr_name] = bb(curr_instrs, curr_name, num, function["name"])
+            blocks[caller_name].kids = [curr_name]
 
 
     # make cfg
     for name in blocks:
-        parents = blocks[name].kids
-        for i in range(len(parents)):
-            parent = blocks[name].kids[i]
-            blocks[name].kids[i] = blocks[parent]
-            blocks[parent].add_prnt(blocks[name])
+        block = blocks[name]
+        for idx in range(len(block.kids)):
+            kid_name = block.kids[idx]
+            kid_block = blocks[kid_name]
+            block.kids[idx] = kid_block
+            kid_block.parents.append(block)
 
     return blocks
+
+def make_crg(blocks: dict[str, bb]): # crg => call ret graph
+    # first handle all of the calls
+    for name in blocks:
+        block = blocks[name]
+        term = block.term
+        if "op" not in term:
+            continue
+        if "call" not in term["op"]:
+            continue
+        funcs = term["funcs"]
+        for func in funcs:
+            block.call_kids.append(blocks["entry@" + func])
+            blocks["entry@" + func].call_parents.append(block)
+
+    # next handle all explicit returns
+    for name in blocks:
+        block = blocks[name]
+        term = block.term
+        if "op" not in term:
+            continue
+        if "ret" not in term["op"]:
+            continue
+        func_name = block.func_name
+        func_entry = blocks["entry@" + func_name]
+        callers = func_entry.call_parents
+        for caller in callers:
+            assert len(caller.kids) == 1 # the callers only child should be the return block
+            kid = caller.kids[0]
+            block.ret_kids.append(kid)
+            kid.ret_parents.append(block)
+
+    # finally, implicit returns
+    flb = {} # maps function names to last block of function
+    for name in blocks:
+        block = blocks[name]
+        if block.func_name not in flb:
+            flb[block.func_name] = block
+        else:
+            curr = flb[block.func_name]
+            if curr.num < block.num:
+                flb[block.func_name] = block
+
+    for name in flb:
+        block = flb[name]
+        term = block.term
+        if "ret" in term["op"]:
+            continue
+        entry = blocks["entry@" + name]
+        callers = entry.call_parents
+        for caller in callers:
+            assert len(caller.kids) == 1
+            kid = caller.kids[0]
+            block.ret_kids.append(kid)
+            kid.ret_parents.append(block)
 
 def insert_block(block: bb, child: bb, blocks):
     block.parents = copy.deepcopy(child.parents)
@@ -236,6 +300,7 @@ if __name__ == "__main__":
         else:
             args[func["name"]] = []
 
+    make_crg(blocks)
     reconstruct_prog(blocks, prog)
 
-    json.dump(prog, sys.stdout, indent=2)
+    # json.dump(prog, sys.stdout, indent=2)
