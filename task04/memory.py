@@ -52,7 +52,7 @@ def analyze_block(block: cfg.bb, parent_var_map: dict[str, list[int]], args):
         instr = block.instrs[idx]
         if "op" not in instr:
             continue
-        if "alloc" in instr["op"]:
+        if "alloc" in instr["op"] or ("call" in instr["op"] and "ptr" in instr["type"]):
             # name allocation and put it in the var map
             dest = instr["dest"]
             if dest in block.var_to_mem:
@@ -74,7 +74,7 @@ def analyze_block(block: cfg.bb, parent_var_map: dict[str, list[int]], args):
             dest = instr["dest"]
             ptr = instr["args"][0]
             if ptr not in block.var_to_mem:
-                raise Exception("Pointer add on undefined pointer")
+                raise Exception(f"Pointer add on undefined pointer {ptr} in {block.name}")
             if dest in block.var_to_mem:
                 block.var_to_mem[dest] += block.var_to_mem[ptr]
             else:
