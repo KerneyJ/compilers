@@ -1,7 +1,7 @@
 import copy
 
 class bb:
-    TERM = ['br', 'jmp', 'ret']
+    TERM = ["br", "jmp", "ret", "call"]
     COUNTER = 0
 
     def __init__(self, instrs, name, num, func_name):
@@ -13,6 +13,11 @@ class bb:
 
         self.parents = []
         self.kids = []
+        self.call_parents = []
+        self.call_kids = []
+        self.ret_parents = []
+        self.ret_kids = []
+
         self.const_table = {}
 
         self.live_list = []
@@ -93,23 +98,43 @@ def make_bb(function):
     blocks = {}
     curr_instrs = []
     curr_name = "entry@" + function["name"]
+    caller_name = None # switch that needs to be checked to see if the previous block ends with a call instruction, thus the this new block will be the block returned to
     for instr in function["instrs"]:
         if "op" in instr:
             curr_instrs.append(instr)
-            if instr["op"] in bb.TERM:
+            if instr["op"] not in bb.TERM:
+                continue
+            if caller_name:
+                blocks[caller_name].kids = [curr_name]
+                caller_name = None # consume caller name
+            if "call" in instr["op"]:
+                funcs = "_".join([func for func in instr["funcs"]])
+                caller_name = curr_name
                 blocks[curr_name] = bb(curr_instrs, curr_name, num, function["name"])
-                if instr["op"] == "jmp" or instr["op"] == "br":
-                    blocks[curr_name].kids += [label + "@" + function["name"] for label in instr["labels"]]
                 curr_instrs = []
-                curr_name = "temp" + str(len(blocks)) + "@" + function["name"]
+                curr_name = "ret-" + funcs + "@" + caller_name
                 num += 1
+                continue
+            blocks[curr_name] = bb(curr_instrs, curr_name, num, function["name"])
+            if instr["op"] == "jmp" or instr["op"] == "br":
+                blocks[curr_name].kids += [label + "@" + function["name"] for label in instr["labels"]]
+            curr_instrs = []
+            curr_name = "temp" + str(len(blocks)) + "@" + function["name"]
+            num += 1
         else: # we have a label
             if curr_instrs:
                 blocks[curr_name] = bb(curr_instrs, curr_name, num, function["name"])
+                if caller_name:
+                    blocks[caller_name].kids = [curr_name]
+                    caller_name = None # consume caller name
                 blocks[curr_name].kids = [instr["label"] + "@" + function["name"]]
                 num += 1
+
             curr_instrs = [instr]
             curr_name = instr["label"] + "@" + function["name"]
+            if caller_name:
+                blocks[caller_name].kids = [curr_name]
+                caller_name = None # consume caller name
     if curr_instrs:
         blocks[curr_name] = bb(curr_instrs, curr_name, num, function["name"])
         num += 1
@@ -196,3 +221,21 @@ def df_b(b: bb, blocks: dict[str, bb]):
         if (block not in b.dominates) and len(set(block.parents) & set(b.dominates)) > 0:
             df.append(block)
     return df
+
+if __name__ == "__main__":
+    import json
+    import sys
+    prog = json.load(sys.stdin)
+
+    blocks = {}
+    args = {}
+    for func in prog["functions"]:
+        blocks |= make_bb(func)
+        if "args" in func:
+            args[func["name"]] = func["args"]
+        else:
+            args[func["name"]] = []
+
+    reconstruct_prog(blocks, prog)
+
+    json.dump(prog, sys.stdout, indent=2)
