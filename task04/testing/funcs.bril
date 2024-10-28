@@ -1,0 +1,18 @@
+@main() {
+  call @h1;
+  call @h2;
+  call @h3;
+}
+
+@h1() {
+  i: int = const 1;
+  print i;
+}
+@h2() {
+  i: int = const 2;
+  print i;
+}
+@h3() {
+  i: int = const 3;
+  print i;
+}
