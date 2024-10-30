@@ -305,4 +305,4 @@ if __name__ == "__main__":
     make_crg(blocks)
     reconstruct_prog(blocks, prog)
 
-    # json.dump(prog, sys.stdout, indent=2)
+    json.dump(prog, sys.stdout, indent=2)

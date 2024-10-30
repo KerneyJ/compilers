@@ -1,6 +1,5 @@
 # which benchmarks to run
-benchmarks = '../../bril/benchmarks/mem/*.bril'
-# benchmarks = '../../bril/examples/test/tdce/*.bril'
+benchmarks = '../../bril/benchmarks/**/*.bril'
 # how to extract the performance metric from stderr
 extract = 'total_dyn_inst: (\d+)'
 
