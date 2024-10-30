@@ -3,6 +3,19 @@ import sys
 import cfg
 import utils
 
+def reachable(parent: cfg.bb, child: cfg.bb):
+    reachable = []
+    stack = [parent]
+    while stack:
+        block = stack.pop(0)
+        reachable.append(block)
+        stack += block.kids + block.call_kids
+        if child not in block.ret_kids:
+            stack += block.ret_kids
+
+def filter_vtm(block: cfg.bb, blocks: list[cfg.bb]):
+    pass
+
 def dead_store(block: cfg.bb):
     live_alloc = block.live_alloc
     for idx in range(len(block.instrs)):
@@ -24,88 +37,103 @@ def meet_parents(parent_maps: list[dict[str, list[int]]]):
         parent_map = parent_maps[parent]
         for var in parent_map:
             if var in var_to_mem:
-                var_to_mem[var] += parent_map[var]
+                var_to_mem[var] |= parent_map[var]
             else:
                 var_to_mem[var] = parent_map[var]
 
-    for var in var_to_mem:
-        var_to_mem[var] = list(set(var_to_mem[var])) # remove dups
     return var_to_mem
 
 def analyze_block(block: cfg.bb, parent_var_map: dict[str, list[int]], args):
+    # Return Codes:
+    # 0 => Nothing has changed
+    # 1 => Something has Changed
+    # 2 => not enough information
+    ret = 0
     if args:
-        for arg in args:
+        for idx in range(len(args)):
+            arg = args[idx]
             if "ptr" not in arg["type"]:
                 continue
-            if arg["name"] not in block.var_to_mem:
-                block.var_to_mem[arg["name"]] = [cfg.bb.COUNTER]
-                cfg.bb.COUNTER += 1
+            for parent in block.call_parents:
+                if parent.func_name == block.func_name:
+                    continue
+                term = parent.term
+                arg_in_parent = term["args"][idx]
+                if arg_in_parent not in parent.var_to_mem:
+                    return 2
+                block.var_to_mem[arg["name"]] = parent.var_to_mem[arg_in_parent]
+                ret = 1
 
     for var in parent_var_map:
         if var in block.var_to_mem:
-            block.var_to_mem[var] += parent_var_map[var]
+            block.var_to_mem[var] |= parent_var_map[var]
         else:
             block.var_to_mem[var] = parent_var_map[var]
 
-    changed = False
     for idx in range(len(block.instrs)):
         instr = block.instrs[idx]
         if "op" not in instr:
             continue
-        if "alloc" in instr["op"] or ("call" in instr["op"] and "ptr" in instr["type"]):
+        if "alloc" in instr["op"] or ("call" in instr["op"] and ("type" in instr and "ptr" in instr["type"])):
             # name allocation and put it in the var map
             dest = instr["dest"]
             if dest in block.var_to_mem:
                 continue
-            block.var_to_mem[dest] = [cfg.bb.COUNTER]
+            block.var_to_mem[dest] = set([(block.name, cfg.bb.COUNTER)])
             cfg.bb.COUNTER += 1
-            changed = True
+            ret = 1
         elif "id" in instr["op"]:
             dest = instr["dest"]
             arg = instr["args"][0]
             if arg not in block.var_to_mem:
                 continue
             if dest in block.var_to_mem:
-                block.var_to_mem[dest] += block.var_to_mem[arg]
+                block.var_to_mem[dest] |= block.var_to_mem[arg]
             else:
                 block.var_to_mem[dest] = block.var_to_mem[arg]
-            changed = True
+            ret = 1
         elif "ptradd" in instr["op"]:
             dest = instr["dest"]
             ptr = instr["args"][0]
             if ptr not in block.var_to_mem:
-                raise Exception(f"Pointer add on undefined pointer {ptr} in {block.name}")
+                return 0 # raise Exception(f"Pointer add on undefined pointer {ptr} in {block.name}")
             if dest in block.var_to_mem:
-                block.var_to_mem[dest] += block.var_to_mem[ptr]
+                block.var_to_mem[dest] |= block.var_to_mem[ptr]
             else:
                 block.var_to_mem[dest] = block.var_to_mem[ptr]
-            changed = True
+            ret = 1
         elif "load" in instr["op"]:
             arg = instr["args"][0] # need another data structure to keep track of which variable are loaded and where
             if arg not in block.var_to_mem:
-                raise Exception(f"Load from undefined pointer {arg}, {block.var_to_mem}, {block.name}")
+                return 0 # raise Exception(f"Load from undefined pointer {arg}, {block.var_to_mem}, {block.name}")
             block.live_alloc += block.var_to_mem[arg]
         elif "store" in instr["op"]: # check if what is being stored is a pointer
             ptr, val = instr["args"]
             if ptr not in block.var_to_mem:
-                raise Exception("Storing to an invalid pointer")
+                return 0 # raise Exception("Storing to an invalid pointer")
             if val in block.var_to_mem: # storing pointer in a pointer
-                block.var_to_mem[ptr] += block.var_to_mem[val]
-                changed = True
+                block.var_to_mem[ptr] |= block.var_to_mem[val]
+                ret = 1
                 continue
-
-    return changed
+    return ret
 
 def alias(blocks: dict[str, cfg.bb], args: dict[str, list]):
-    stack = [blocks[name] for name in blocks]
+    # initial stack condition
+    block_list = [blocks[name] for name in blocks]
+    # remove functions that are never called
+    entry_blocks = [block for block in block_list if "entry" in block.name]
+    uncalled_funcs = [block.func_name for block in entry_blocks if not block.call_parents and block.func_name != "main"]
+    stack = [block for block in block_list if block.func_name not in uncalled_funcs]
     while stack:
         block = stack.pop(0)
-        meet = meet_parents({parent.name: parent.var_to_mem for parent in block.parents})
-        changed = analyze_block(block, meet, args[block.func_name] if "entry" in block.name else None)
-        if changed:
-            for kid in block.kids:
+        meet = meet_parents({parent.name: parent.var_to_mem for parent in (block.parents + block.ret_parents)})
+        ret = analyze_block(block, meet, args[block.func_name] if "entry" in block.name else None)
+        if ret == 1:
+            for kid in (block.kids + block.ret_kids + block.call_kids):
                 if kid not in stack:
                     stack.append(kid)
+        elif ret == 2:
+            stack += [b for b in block_list if b.func_name == block.func_name]
 
 def opt(prog):
     blocks = {}
@@ -116,20 +144,23 @@ def opt(prog):
             args[func["name"]] = func["args"]
         else:
             args[func["name"]] = []
+    cfg.make_crg(blocks)
 
     alias(blocks, args)
+    for name in blocks:
+        print(name, blocks[name].var_to_mem)
 
     # remove dead stores
-    for name in blocks:
-        block = blocks[name]
-        dead_store(block)
-        for idx in range(len(block.instrs)):
-            instr = block.instrs[idx]
-            if "dead" not in instr:
-                continue
-            if instr["dead"]:
-                block.instrs[idx] = None
-        block.instrs = [instr for instr in block.instrs if instr] # clean the nones
+#    for name in blocks:
+#        block = blocks[name]
+#        dead_store(block)
+#        for idx in range(len(block.instrs)):
+#            instr = block.instrs[idx]
+#            if "dead" not in instr:
+#                continue
+#            if instr["dead"]:
+#                block.instrs[idx] = None
+#        block.instrs = [instr for instr in block.instrs if instr] # clean the nones
 
     cfg.reconstruct_prog(blocks, prog)
 
@@ -138,4 +169,4 @@ def opt(prog):
 if __name__ == "__main__":
     prog = json.load(sys.stdin)
     prog = opt(prog)
-    json.dump(prog, sys.stdout, indent=2)
+    # json.dump(prog, sys.stdout, indent=2)
