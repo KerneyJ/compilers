@@ -12,6 +12,7 @@ def reachable(parent: cfg.bb, child: cfg.bb):
         stack += block.kids + block.call_kids
         if child not in block.ret_kids:
             stack += block.ret_kids
+    return reachable
 
 def filter_vtm(block: cfg.bb, blocks: list[cfg.bb]):
     pass
@@ -31,11 +32,22 @@ def dead_store(block: cfg.bb):
         else:
             block.instrs[idx]["dead"] = False
 
-def meet_parents(parent_maps: list[dict[str, list[int]]]):
+def meet_parents(block: cfg.bb):
     var_to_mem = {}
-    for parent in parent_maps:
-        parent_map = parent_maps[parent]
+    for parent in block.parents:
+        parent_map = parent.var_to_mem
         for var in parent_map:
+            if var in var_to_mem:
+                var_to_mem[var] |= parent_map[var]
+            else:
+                var_to_mem[var] = parent_map[var]
+
+    for parent in block.ret_parents:
+        parent_map = parent.var_to_mem
+        ret_vars = parent.term["args"]
+        for var in parent_map:
+            if var not in ret_vars:
+                continue
             if var in var_to_mem:
                 var_to_mem[var] |= parent_map[var]
             else:
@@ -120,13 +132,17 @@ def analyze_block(block: cfg.bb, parent_var_map: dict[str, list[int]], args):
 def alias(blocks: dict[str, cfg.bb], args: dict[str, list]):
     # initial stack condition
     block_list = [blocks[name] for name in blocks]
-    # remove functions that are never called
+    # find functions that are never called
     entry_blocks = [block for block in block_list if "entry" in block.name]
     uncalled_funcs = [block.func_name for block in entry_blocks if not block.call_parents and block.func_name != "main"]
+    # delete call parents(prevents infinite loops) that are never invoked
+    for block in block_list:
+        block.call_parents = [parent for parent in block.call_parents if parent.func_name not in uncalled_funcs]
+    # remove functions that are never called
     stack = [block for block in block_list if block.func_name not in uncalled_funcs]
     while stack:
         block = stack.pop(0)
-        meet = meet_parents({parent.name: parent.var_to_mem for parent in (block.parents + block.ret_parents)})
+        meet = meet_parents(block)
         ret = analyze_block(block, meet, args[block.func_name] if "entry" in block.name else None)
         if ret == 1:
             for kid in (block.kids + block.ret_kids + block.call_kids):
