@@ -107,7 +107,9 @@ def analyze_block(block: cfg.bb, parent_var_map: dict[str, list[int]], args):
             arg = instr["args"][0] # need another data structure to keep track of which variable are loaded and where
             if arg not in block.var_to_mem:
                 return 0 # raise Exception(f"Load from undefined pointer {arg}, {block.var_to_mem}, {block.name}")
-            block.live_alloc += block.var_to_mem[arg]
+            block.live_alloc |= block.var_to_mem[arg]
+            for b in block.reachable:
+                b.live_alloc |= block.var_to_mem[arg]
         elif "store" in instr["op"]: # check if what is being stored is a pointer
             ptr, val = instr["args"]
             if ptr not in block.var_to_mem:
@@ -159,7 +161,7 @@ def opt(prog):
 
     alias(blocks, args)
     for name in blocks:
-        print(name, [b.name for b in blocks[name].reachable])
+        print(name, blocks[name].live_alloc)
 
     # remove dead stores
 #    for name in blocks:

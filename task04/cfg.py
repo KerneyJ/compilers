@@ -27,7 +27,7 @@ class bb:
         self.dominates = []
 
         self.var_to_mem = {} # maping of variables to allocations
-        self.live_alloc = [] # list of allocaitons made live by a load
+        self.live_alloc = set() # list of allocaitons made live by a load
 
     def __str__(self):
         s = "Name: " + self.name + " Parents: {" + ", ".join([p.name for p in self.parents]) + "} Children: {" + ", ".join([k.name for k in self.kids]) +\
