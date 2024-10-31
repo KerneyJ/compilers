@@ -3,17 +3,6 @@ import sys
 import cfg
 import utils
 
-def reachable(parent: cfg.bb, child: cfg.bb):
-    reachable = []
-    stack = [parent]
-    while stack:
-        block = stack.pop(0)
-        reachable.append(block)
-        stack += block.kids + block.call_kids
-        if child not in block.ret_kids:
-            stack += block.ret_kids
-    return reachable
-
 def filter_vtm(block: cfg.bb, blocks: list[cfg.bb]):
     pass
 
@@ -161,10 +150,16 @@ def opt(prog):
         else:
             args[func["name"]] = []
     cfg.make_crg(blocks)
+    entry_main = blocks["entry@main"]
+    for name in blocks:
+        if name == "entry@main":
+            continue
+        block = blocks[name]
+        block.reachable = set(cfg.reachable(entry_main, block))
 
     alias(blocks, args)
     for name in blocks:
-        print(name, blocks[name].var_to_mem)
+        print(name, [b.name for b in blocks[name].reachable])
 
     # remove dead stores
 #    for name in blocks:

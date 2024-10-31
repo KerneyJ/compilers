@@ -18,6 +18,8 @@ class bb:
         self.ret_parents = []
         self.ret_kids = []
 
+        self.reachable = []
+
         self.const_table = {}
 
         self.live_list = []
@@ -287,6 +289,29 @@ def df_b(b: bb, blocks: dict[str, bb]):
         if (block not in b.dominates) and len(set(block.parents) & set(b.dominates)) > 0:
             df.append(block)
     return df
+
+def reachable(parent: bb, child: bb):
+    stack = [parent]
+    visited = []
+    visited_funcs = set()
+    while stack:
+        block = stack.pop(0)
+        visited_funcs.add(block.func_name)
+        if child in (block.kids + block.ret_kids or block.call_kids):
+            continue
+        for kid in block.kids + block.call_kids:
+            if kid in visited:
+                continue
+            visited.append(kid)
+            stack.append(kid)
+        for kid in block.ret_kids:
+            if kid in visited:
+                continue
+            if kid.func_name not in visited_funcs:
+                continue
+            visited.append(kid)
+            stack.append(kid)
+    return visited
 
 if __name__ == "__main__":
     import json
