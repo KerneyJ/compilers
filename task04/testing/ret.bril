@@ -1,0 +1,9 @@
+@main (){
+    size: int = const 10;
+    a: ptr<int> = call @helper size;
+}
+
+@helper(s: int){
+    array: ptr<int> = alloc s;
+    ret array;
+}
