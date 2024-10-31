@@ -3,9 +3,6 @@ import sys
 import cfg
 import utils
 
-def filter_vtm(block: cfg.bb, blocks: list[cfg.bb]):
-    pass
-
 def dead_store(block: cfg.bb):
     live_alloc = block.live_alloc
     for idx in range(len(block.instrs)):
@@ -18,8 +15,10 @@ def dead_store(block: cfg.bb):
         points_to = block.var_to_mem[ptr]
         if not (set(live_alloc) & set(points_to)):
             block.instrs[idx]["dead"] = True
+            # print(instr, "marked dead in block: ", block.name, block.live_alloc)
         else:
             block.instrs[idx]["dead"] = False
+            # print(instr, "marked live in block: ", block.name, block.live_alloc)
 
 def meet_parents(block: cfg.bb):
     var_to_mem = {}
@@ -78,14 +77,34 @@ def analyze_block(block: cfg.bb, parent_var_map: dict[str, list[int]], args):
         instr = block.instrs[idx]
         if "op" not in instr:
             continue
-        if "alloc" in instr["op"] or ("call" in instr["op"] and ("type" in instr and "ptr" in instr["type"])):
+        if "alloc" in instr["op"]:
+            if "seen" in instr:
+                continue
             # name allocation and put it in the var map
             dest = instr["dest"]
-            if dest in block.var_to_mem:
-                continue
-            block.var_to_mem[dest] = set([(block.name, cfg.bb.COUNTER)])
+            if dest in block.var_to_mem: # this is a conservative position
+                block.var_to_mem[dest] |= set([(block.name, cfg.bb.COUNTER)])
+            else:
+                block.var_to_mem[dest] = set([(block.name, cfg.bb.COUNTER)])
             cfg.bb.COUNTER += 1
+            block.instrs[idx]["seen"] = True
             ret = 1
+        elif ("call" in instr["op"] and ("type" in instr and "ptr" in instr["type"])):
+            dest = instr["dest"]
+            assert len(block.kids) == 1
+            kid = block.kids[0]
+            allocs = set()
+            ret_parents = kid.ret_parents
+            for p in ret_parents:
+                term = p.term
+                ptr = term["args"][0]
+                if ptr not in p.var_to_mem:
+                    return 2
+                allocs |= p.var_to_mem[ptr]
+            if dest in block.var_to_mem:
+                block.var_to_mem[dest] |= allocs
+            else:
+                block.var_to_mem[dest] = allocs
         elif "id" in instr["op"]:
             dest = instr["dest"]
             arg = instr["args"][0]
@@ -167,16 +186,16 @@ def opt(prog):
     #    print(name, blocks[name].live_alloc)
 
     # remove dead stores
-#    for name in blocks:
-#        block = blocks[name]
-#        dead_store(block)
-#        for idx in range(len(block.instrs)):
-#            instr = block.instrs[idx]
-#            if "dead" not in instr:
-#                continue
-#            if instr["dead"]:
-#                block.instrs[idx] = None
-#        block.instrs = [instr for instr in block.instrs if instr] # clean the nones
+    for name in blocks:
+        block = blocks[name]
+        dead_store(block)
+        for idx in range(len(block.instrs)):
+            instr = block.instrs[idx]
+            if "dead" not in instr:
+                continue
+            if instr["dead"]:
+                block.instrs[idx] = None
+        block.instrs = [instr for instr in block.instrs if instr] # clean the nones
 
     cfg.reconstruct_prog(blocks, prog)
 
