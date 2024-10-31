@@ -297,19 +297,18 @@ def reachable(parent: bb, child: bb):
     while stack:
         block = stack.pop(0)
         visited_funcs.add(block.func_name)
+        visited.append(block)
         if child in (block.kids + block.ret_kids or block.call_kids):
             continue
         for kid in block.kids + block.call_kids:
             if kid in visited:
                 continue
-            visited.append(kid)
             stack.append(kid)
         for kid in block.ret_kids:
             if kid in visited:
                 continue
             if kid.func_name not in visited_funcs:
                 continue
-            visited.append(kid)
             stack.append(kid)
     return visited
 
