@@ -33,7 +33,10 @@ def meet_parents(block: cfg.bb):
 
     for parent in block.ret_parents:
         parent_map = parent.var_to_mem
-        ret_vars = parent.term["args"]
+        term = parent.term
+        if "args" not in term:
+            continue
+        ret_vars = term["args"]
         for var in parent_map:
             if var not in ret_vars:
                 continue
@@ -160,8 +163,8 @@ def opt(prog):
         block.reachable = set(cfg.reachable(entry_main, block))
 
     alias(blocks, args)
-    for name in blocks:
-        print(name, blocks[name].live_alloc)
+    #for name in blocks:
+    #    print(name, blocks[name].live_alloc)
 
     # remove dead stores
 #    for name in blocks:
@@ -182,4 +185,4 @@ def opt(prog):
 if __name__ == "__main__":
     prog = json.load(sys.stdin)
     prog = opt(prog)
-    # json.dump(prog, sys.stdout, indent=2)
+    json.dump(prog, sys.stdout, indent=2)
