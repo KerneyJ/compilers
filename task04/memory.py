@@ -15,10 +15,8 @@ def dead_store(block: cfg.bb):
         points_to = block.var_to_mem[ptr]
         if not (set(live_alloc) & set(points_to)):
             block.instrs[idx]["dead"] = True
-            # print(instr, "marked dead in block: ", block.name, block.live_alloc)
         else:
             block.instrs[idx]["dead"] = False
-            # print(instr, "marked live in block: ", block.name, block.live_alloc)
 
 def meet_parents(block: cfg.bb):
     var_to_mem = {}
@@ -146,7 +144,7 @@ def alias(blocks: dict[str, cfg.bb], args: dict[str, list]):
     # initial stack condition
     block_list = [blocks[name] for name in blocks]
     # find functions that are never called
-    entry_blocks = [block for block in block_list if "entry" in block.name]
+    entry_blocks = [block for block in block_list if "entry" in block.name[:5]]
     uncalled_funcs = [block.func_name for block in entry_blocks if not block.call_parents and block.func_name != "main"]
     # delete call parents(prevents infinite loops) that are never invoked
     for block in block_list:
@@ -182,8 +180,6 @@ def opt(prog):
         block.reachable = set(cfg.reachable(entry_main, block))
 
     alias(blocks, args)
-    #for name in blocks:
-    #    print(name, blocks[name].live_alloc)
 
     # remove dead stores
     for name in blocks:
