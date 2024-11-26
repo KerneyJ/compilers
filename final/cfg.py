@@ -191,7 +191,7 @@ def df_b(b: bb, blocks: dict[str, bb]):
             df.append(block)
     return df
 
-def get_defs(blocks: dict[str, cfg.bb], func_args: dict[str, list[str]]):
+def get_defs(blocks: dict[str, bb], func_args: dict[str, list[str]]):
     block_list = [blocks[name] for name in blocks]
     block_list.sort()
     seen = {} # maps function names to seen variables
