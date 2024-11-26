@@ -2,7 +2,7 @@ import json
 import sys
 import cfg
 import liveness
-import codegen
+import regalloc
 
 def compile(prog):
     blocks = {}
@@ -13,8 +13,8 @@ def compile(prog):
 
     # liveness analysis
     liveness.instr_liveness(blocks)
-    ig = codegen.make_interference_graph(blocks)
-    reg_alloc = codegen.register_allocation(ig, 6)
+    ig = regalloc.make_interference_graph(blocks)
+    reg_alloc = regalloc.register_allocation(ig, 6)
     print(reg_alloc)
 
 if __name__ == "__main__":
