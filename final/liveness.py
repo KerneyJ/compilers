@@ -22,24 +22,6 @@ def liveness(block, ll = []):
     ll += gl
     return list(set(ll))
 
-def get_defs(blocks: dict[str, cfg.bb], func_args: dict[str, list[str]]):
-    block_list = [blocks[name] for name in blocks]
-    block_list.sort()
-    seen = {} # maps function names to seen variables
-    for name in func_args:
-        seen[name] = set()
-
-    for block in block_list:
-        defs = set()
-        if "entry" in block.name:
-            for arg in func_args[block.func_name]:
-                defs.add(arg)
-        for instr in block.instrs:
-            if "dest" in instr and instr["dest"] not in seen[block.func_name]:
-                defs.add(instr["dest"])
-        block.defs = defs
-        seen[block.func_name] |= defs
-
 def instr_liveness(blocks):
     pass
 
