@@ -13,7 +13,9 @@ def compile(prog):
 
     # liveness analysis
     liveness.instr_liveness(blocks)
-    codegen.make_interference_graph(blocks)
+    ig = codegen.make_interference_graph(blocks)
+    reg_alloc = codegen.register_allocation(ig, 6)
+    print(reg_alloc)
 
 if __name__ == "__main__":
     prog = json.load(sys.stdin)

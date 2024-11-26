@@ -36,13 +36,16 @@ def make_interference_graph(blocks):
 
 def register_allocation(interference_graph, num_regs):
     reg_alloc = {}
-    sorted_vars = sorted(interference_graph.keys(), key=lambda x: len(interference_graph[x]), reverse=True)
-    unused = set(range(num_regs))
-    for var in sorted_vars:
-        used = [reg_alloc[adj] for adj in interference_graph[var] if adj in reg_alloc]
-        available = unused - used
-        if available:
-            reg_alloc[var] = list(available)[0]
-        else:
-            reg_alloc[var] = None
+    for func_name in interference_graph:
+        func_ig = interference_graph[func_name]
+        reg_alloc[func_name] = {}
+        sorted_vars = sorted(func_ig.keys(), key=lambda x: len(func_ig[x]), reverse=True)
+        unused = set(range(num_regs))
+        for var in sorted_vars:
+            used = set([reg_alloc[func_name][adj] for adj in func_ig[var] if adj in reg_alloc[func_name]])
+            available = unused - used
+            if available:
+                reg_alloc[func_name][var] = list(available)[0]
+            else:
+                reg_alloc[func_name][var] = None
     return reg_alloc
