@@ -1,7 +1,6 @@
 import json
 import sys
 import cfg
-import gdce
 import utils
 
 def liveness(block, ll = []):
@@ -23,17 +22,26 @@ def liveness(block, ll = []):
     ll += gl
     return list(set(ll))
 
-def mark_dead(block):
-    ll = block.gather_desc_ll()
-    ll += block.live_list
-    for idx in range(len(block.instrs)):
-        instr = block.instrs[idx]
-        if "dest" not in instr:
-            continue
-        if instr["dest"] not in ll:
-            block.instrs[idx] = None
-    block.instrs = [instr for instr in block.instrs if instr is not None]
-    return block
+def get_defs(blocks: dict[str, cfg.bb], func_args: dict[str, list[str]]):
+    block_list = [blocks[name] for name in blocks]
+    block_list.sort()
+    seen = {} # maps function names to seen variables
+    for name in func_args:
+        seen[name] = set()
+
+    for block in block_list:
+        defs = set()
+        if "entry" in block.name:
+            for arg in func_args[block.func_name]:
+                defs.add(arg)
+        for instr in block.instrs:
+            if "dest" in instr and instr["dest"] not in seen[block.func_name]:
+                defs.add(instr["dest"])
+        block.defs = defs
+        seen[block.func_name] |= defs
+
+def instr_liveness(blocks):
+    pass
 
 def opt(prog):
     blocks = {}
@@ -57,7 +65,6 @@ def opt(prog):
         blocks[name] = mark_dead(blocks[name])
 
     cfg.reconstruct_prog(blocks, prog)
-    # prog["functions"] = [gdce.gdce(f) for f in prog["functions"]]
 
     return prog
 

@@ -14,6 +14,7 @@ class bb:
         self.num = num
         self.func_name = func_name
         self.dominates = []
+        self.defs = set()
 
     def __str__(self):
         s = "Name: " + self.name + " Parents: " + ", ".join([p.name for p in self.parents]) + " Children: " + ", ".join([k.name for k in self.kids]) + "\n"
