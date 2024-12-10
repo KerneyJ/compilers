@@ -246,11 +246,15 @@ def get_defs(blocks: dict[str, bb]):
     seen = {} # maps function names to seen variables
     for name in blocks:
         seen[blocks[name].func_name] = set()
-
     for block in block_list:
         defs = set()
         for instr in block.instrs:
             if "dest" in instr and instr["dest"] not in seen[block.func_name]:
                 defs.add(instr["dest"])
+            if "f_args" in instr:
+                f_args = instr["f_args"]
+                for fg in f_args:
+                    if fg not in seen[block.func_name]:
+                        defs.add(fg)
         block.defs = defs
         seen[block.func_name] |= defs

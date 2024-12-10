@@ -43,6 +43,8 @@ def instr_live(instr, ll):
 
     if "args" in instr:
         gl += instr["args"]
+    if "f_args" in instr:
+        gl += instr["f_args"]
     if "dest" in instr:
         kl.append(instr["dest"])
 
@@ -52,7 +54,7 @@ def instr_live(instr, ll):
     ll += gl
     return list(set(ll))
 
-def instr_liveness(blocks):
+def instr_liveness(blocks): # TODO CURRENT PROBLEM IS NOT PLACING FUNCTION ARGS INTO LIVE LIST
     stack = [instr for name in blocks for instr in blocks[name].instrs]
     while stack:
         instr = stack.pop(0)
@@ -61,6 +63,8 @@ def instr_liveness(blocks):
         if set(instr["ii"].live_list).symmetric_difference(set(inp)):
             for parent in instr["ii"].parents:
                 stack.append(blocks[parent.bname].instrs[parent.idx])
+        instr["ii"].live_list = inp
+        instr["live_vars"] = inp
 
 def opt(prog):
     blocks = {}
