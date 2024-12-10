@@ -5,6 +5,7 @@ class bb:
 
     def __init__(self, instrs, name, num, func_name):
         self.instrs = instrs
+        self.iis = []
         self.name = name
         self.parents = []
         self.kids = []
@@ -82,6 +83,12 @@ class bb:
 
         return  phi_location
 
+class ii: # for liveness analysis
+    def __init__(self):
+        self.parents = []
+        self.kids = []
+        self.live_list = []
+
 def make_bb(function):
     num = 0
     blocks = {}
@@ -118,6 +125,39 @@ def make_bb(function):
             blocks[parent].add_prnt(blocks[name])
 
     return blocks
+
+def make_ii(f_blocks: dict[str, bb]):
+    # Assumes that make bb has been called before this
+    for name in f_blocks:
+        block = f_blocks[name]
+        for idx in range(len(block.instrs)):
+            instr = block.instrs[idx]
+            ii_instr = ii()
+
+            # The below could be pushed together but I like it more explicit
+            # link kids
+            if instr == block.term:
+                ii_instr.kids = [(kid_block.name, 0) for kid_block in block.kids]
+            else:
+                ii_instr.kids = [(name, idx + 1)]
+            # link parents
+            if idx == 0:
+                ii_instr.parents = [(par_block.name, len(par_block.instrs)-1) for par_block in block.parents]
+            else:
+                ii_instr.parents = [(name, idx-1)]
+            instr["ii"] = ii_instr
+
+    for name in f_blocks:
+        block = f_blocks[name]
+        for instr in block.instrs:
+            ii_instr = instr["ii"]
+            for idx in range(len(ii_instr.kids)):
+                (name, pos) = ii_instr.kids[idx]
+                ii_instr.kids[idx] = f_blocks[name].instrs[pos]["ii"]
+            for idx in range(len(ii_instr.parents)):
+                (name, pos) = ii_instr.parents[idx]
+                ii_instr.parents[idx] = f_blocks[name].instrs[pos]["ii"]
+
 
 def insert_block(block: bb, child: bb, blocks):
     block.parents = copy.deepcopy(child.parents)
