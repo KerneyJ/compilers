@@ -28,9 +28,7 @@ def live_analysis(blocks):
         block = stack.pop(0)
         out = block.gather_child_ll()
         inp = live(block, out)
-        out.sort()
-        inp.sort()
-        if out != inp:
+        if set(block.live_list).symmetric_difference(set(inp)):
             for parent in block.parents:
                 if parent not in stack:
                     stack.append(parent)
