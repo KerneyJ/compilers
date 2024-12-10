@@ -84,10 +84,19 @@ class bb:
         return  phi_location
 
 class ii: # for liveness analysis
-    def __init__(self):
+    def __init__(self, block_name, index):
+        self.bname = block_name
+        self.idx = index
         self.parents = []
         self.kids = []
         self.live_list = []
+
+    def gather_child_ll(self):
+        cll = []
+        for k in self.kids:
+            cll += k.live_list
+        cll = list(set(cll)) # remove dups
+        return cll
 
 def make_bb(function):
     num = 0
@@ -132,7 +141,7 @@ def make_ii(f_blocks: dict[str, bb]):
         block = f_blocks[name]
         for idx in range(len(block.instrs)):
             instr = block.instrs[idx]
-            ii_instr = ii()
+            ii_instr = ii(name, idx)
 
             # The below could be pushed together but I like it more explicit
             # link kids

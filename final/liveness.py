@@ -34,22 +34,33 @@ def live_analysis(blocks):
                     stack.append(parent)
         block.live_list = inp
 
-def instr_liveness(blocks):
-    live_analysis(blocks) # performs block level liveness analysis
-    block_list = [blocks[name] for name in blocks]
-    block_list.sort()
-    seen = {} # maps function names to seen variables
-    for name in blocks:
-        if "entry" not in name:
-            continue
-        seen[blocks[name].func_name] = set()
+def instr_live(instr, ll):
+    gl = []
+    kl = []
 
-    for block in block_list:
-        for idx in range(len(block.instrs)):
-            instr = block.instrs[idx]
-            if "dest" in instr and instr["dest"] not in seen[block.func_name]:
-                seen[block.func_name].add(instr["dest"])
-            block.instrs[idx]["live_vars"] = seen[block.func_name] & set(block.live_list)
+    if "op" not in instr:
+        return ll
+
+    if "args" in instr:
+        gl += instr["args"]
+    if "dest" in instr:
+        kl.append(instr["dest"])
+
+    kl = list(set(kl)) # remove dups
+    gl = list(set(gl)) # remove dups
+    ll = [var for var in ll if var not in kl]
+    ll += gl
+    return list(set(ll))
+
+def instr_liveness(blocks):
+    stack = [instr for name in blocks for instr in blocks[name].instrs]
+    while stack:
+        instr = stack.pop(0)
+        out = instr["ii"].gather_child_ll()
+        inp = instr_live(instr, out)
+        if set(instr["ii"].live_list).symmetric_difference(set(inp)):
+            for parent in instr["ii"].parents:
+                stack.append(blocks[parent.bname].instrs[parent.idx])
 
 def opt(prog):
     blocks = {}
