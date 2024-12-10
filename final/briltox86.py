@@ -69,19 +69,19 @@ def gte(dest, arg1, arg2):
         f"movq %rax {dest}",
     ]
 
-def not(arg):
+def noti(arg):
     return [
         f"not {arg}"
     ]
 
-def and(dest, arg1, arg2):
+def andi(dest, arg1, arg2):
     return [
         f"movq {arg1}, %rax",
         f"andq {arg2}, %rax",
         f"movq %rax, {dest}"
     ]
 
-def or(dest, arg1, arg2):
+def ori(dest, arg1, arg2):
     return [
         f"movq {arg1}, %rax",
         f"orq {arg2}, %rax",
@@ -108,12 +108,12 @@ def call(label):
 def ret(arg=None):
     if arg:
         return [
-            f"movq {arg}, %rax"
+            f"movq {arg}, %rax",
             f"ret"
         ]
     else:
         return [
-            f"xor %rax, %rax"
+            f"xor %rax, %rax",
             f"ret"
         ]
 
@@ -121,3 +121,15 @@ def nop():
     return [
         f"nop"
     ]
+
+def label(label):
+    return [
+        f"{label}:"
+    ]
+
+def idi(src, dst):
+    return [
+        f"movq {src}, {dest}"
+    ]
+
+
