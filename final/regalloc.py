@@ -1,6 +1,6 @@
 import cfg
 
-def make_interference_graph(blocks):
+def make_interference_graph(blocks: dict[str, cfg.bb]):
     # assumes liveness has been done at the instruciton level
     cfg.get_defs(blocks)
     interference_graph = {} # interference graph
@@ -31,10 +31,9 @@ def make_interference_graph(blocks):
                     interference_graph[func_name][dest].add(var)
                     interference_graph[func_name][var].add(dest)
 
-
     return interference_graph
 
-def register_allocation(interference_graph, num_regs):
+def register_allocation(interference_graph: dict[str, dict[str, set[str]]], num_regs: int):
     reg_alloc = {}
     for func_name in interference_graph:
         func_ig = interference_graph[func_name]
@@ -49,3 +48,12 @@ def register_allocation(interference_graph, num_regs):
             else:
                 reg_alloc[func_name][var] = None
     return reg_alloc
+
+def register_assignment(registers: tuple[str], reg_alloc: dict[str, set[str]]):
+    stack_pos = 0
+    for var in reg_alloc:
+        if reg_alloc[var] != None:
+            reg_alloc[var] = registers[reg_alloc[var]]
+        else:
+            reg_alloc[var] = "st" + str(stack_pos)
+            stack_pos += 1
