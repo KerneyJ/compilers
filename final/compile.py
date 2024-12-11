@@ -37,7 +37,7 @@ def compile(prog):
     for func_name in funcs:
         f_blocks = funcs[func_name]
         f_regs = reg_alloc[func_name]
-        codegen.gen(f_blocks, f_regs)
+        codegen.gen_func(f_blocks, f_regs)
 
 if __name__ == "__main__":
     prog = json.load(sys.stdin)
