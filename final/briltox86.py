@@ -1,35 +1,60 @@
 # arithmetic
-def add(dest, arg1, arg2):
+def add(instr, reg_alloc):
+    assert len(instr["args"]) == 2
+    assert len(instr["dest"]) == 1
+    arg1 = reg_alloc[instr["args"][0]]
+    arg2 = reg_alloc[instr["args"][1]]
+    dest = reg_alloc[instr["dest"][0]]
     return [
         f"movq {arg1}, %rax",
         f"addq {arg2}, %rax",
         f"movq %rax, {dest}"
     ]
 
-def sub(dest, arg1, arg2):
+def sub(instr, reg_alloc):
+    assert len(instr["args"]) == 2
+    assert len(instr["dest"]) == 1
+    arg1 = reg_alloc[instr["args"][0]]
+    arg2 = reg_alloc[instr["args"][1]]
+    dest = reg_alloc[instr["dest"][0]]
     return [
         f"movq {arg1}, %rax",
         f"subq {arg2}, %rax",
         f"movq %rax, {dest}"
     ]
 
-def mul(dest, arg1, arg2):
+def mul(instr, reg_alloc):
+    assert len(instr["args"]) == 2
+    assert len(instr["dest"]) == 1
+    arg1 = reg_alloc[instr["args"][0]]
+    arg2 = reg_alloc[instr["args"][1]]
+    dest = reg_alloc[instr["dest"][0]]
     return [
         f"movq {arg1}, %rax",
         f"imul {arg2}, %rax",
         f"movq %rax, {dest}"
     ]
 
-def div(dest, arg1, arg2):
+def div(instr, reg_alloc):
+    assert len(instr["args"]) == 2
+    assert len(instr["dest"]) == 1
+    arg1 = reg_alloc[instr["args"][0]]
+    arg2 = reg_alloc[instr["args"][1]]
+    dest = reg_alloc[instr["dest"][0]]
     return [
-        f"movq {arg1}, %rax",
-        f"cltd",
+f"movq {arg1}, %rax",
+f"cltd",
         f"divq {arg2}",
         f"movq %rax, {dest}"
     ]
 
 # comparrison
-def eq(dest, arg1, arg2):
+def eq(instr, reg_alloc):
+    assert len(instr["args"]) == 2
+    assert len(instr["dest"]) == 1
+    arg1 = reg_alloc[instr["args"][0]]
+    arg2 = reg_alloc[instr["args"][1]]
+    dest = reg_alloc[instr["dest"][0]]
     return [
         f"cmpq {arg1}, {arg2}",
         f"xor %rax %rax",
@@ -37,7 +62,12 @@ def eq(dest, arg1, arg2):
         f"movq %rax {dest}",
     ]
 
-def lt(dest, arg1, arg2):
+def lt(instr, reg_alloc):
+    assert len(instr["args"]) == 2
+    assert len(instr["dest"]) == 1
+    arg1 = reg_alloc[instr["args"][0]]
+    arg2 = reg_alloc[instr["args"][1]]
+    dest = reg_alloc[instr["dest"][0]]
     return [
         f"cmpq {arg1}, {arg2}",
         f"xor %rax %rax",
@@ -45,7 +75,12 @@ def lt(dest, arg1, arg2):
         f"movq %rax {dest}",
     ]
 
-def lte(dest, arg1, arg2):
+def lte(instr, reg_alloc):
+    assert len(instr["args"]) == 2
+    assert len(instr["dest"]) == 1
+    arg1 = reg_alloc[instr["args"][0]]
+    arg2 = reg_alloc[instr["args"][1]]
+    dest = reg_alloc[instr["dest"][0]]
     return [
         f"cmpq {arg1}, {arg2}",
         f"xor %rax %rax",
@@ -53,7 +88,12 @@ def lte(dest, arg1, arg2):
         f"movq %rax {dest}",
     ]
 
-def gt(dest, arg1, arg2):
+def gt(instr, reg_alloc):
+    assert len(instr["args"]) == 2
+    assert len(instr["dest"]) == 1
+    arg1 = reg_alloc[instr["args"][0]]
+    arg2 = reg_alloc[instr["args"][1]]
+    dest = reg_alloc[instr["dest"][0]]
     return [
         f"cmpq {arg1}, {arg2}",
         f"xor %rax %rax",
@@ -61,7 +101,12 @@ def gt(dest, arg1, arg2):
         f"movq %rax {dest}",
     ]
 
-def gte(dest, arg1, arg2):
+def gte(instr, reg_alloc):
+    assert len(instr["args"]) == 2
+assert len(instr["dest"]) == 1
+    arg1 = reg_alloc[instr["args"][0]]
+    arg2 = reg_alloc[instr["args"][1]]
+    dest = reg_alloc[instr["dest"][0]]
     return [
         f"cmpq {arg1}, {arg2}",
         f"xor %rax %rax",
@@ -74,39 +119,61 @@ def noti(arg):
         f"not {arg}"
     ]
 
-def andi(dest, arg1, arg2):
+def andi(instr, reg_alloc):
+    assert len(instr["args"]) == 2
+    assert len(instr["dest"]) == 1
+    arg1 = reg_alloc[instr["args"][0]]
+    arg2 = reg_alloc[instr["args"][1]]
+    dest = reg_alloc[instr["dest"][0]]
     return [
         f"movq {arg1}, %rax",
         f"andq {arg2}, %rax",
         f"movq %rax, {dest}"
     ]
 
-def ori(dest, arg1, arg2):
+def ori(instr, reg_alloc):
+    assert len(instr["args"]) == 2
+    assert len(instr["dest"]) == 1
+    arg1 = reg_alloc[instr["args"][0]]
+    arg2 = reg_alloc[instr["args"][1]]
+    dest = reg_alloc[instr["dest"][0]]
     return [
         f"movq {arg1}, %rax",
         f"orq {arg2}, %rax",
         f"movq %rax, {dest}"
     ]
 
-def jmp(label):
+def jmp(instr, reg_alloc):
+    label = instr["label"]
     return [
         f"jmp {label}"
     ]
 
-def br(cond, label1, label2):
+def br(instr, reg_alloc):
+    assert len(instr["labels"]) == 2
+    assert len(instr["cond"]) == 1
+    label1 = instr["labels"][0]
+    label2 = instr["labels"][0]
+    cond = reg_alloc[instr["cond"]]
     return [
         f"testq {cond}",
         f"jne {label1}",
         f"jmp {label2}",
     ]
 
-def call(label):
+def call(instr, reg_alloc):
+    # FIXME, need to a do a couple of things here
+    # first need to give the first block in every function a label
+    # next need to somehow pass this label to here
+    # last need to insert pseudo instruction for pushing parameters on the stack, to handle later
     return [
         f"call {label}"
     ]
 
-def ret(arg=None):
+def ret(instr, reg_alloc):
     if arg:
+        assert len(instr["args"]) == 1
+        arg = reg_alloc[instr["args"][0]]
         return [
             f"movq {arg}, %rax",
             f"ret"
@@ -117,19 +184,54 @@ def ret(arg=None):
             f"ret"
         ]
 
-def nop():
+def nop(instr, reg_alloc):
     return [
         f"nop"
     ]
 
-def label(label):
+def label(instr, reg_alloc):
+    assert len(instr["labels"]) == 1
+    label = instr["labels"][0]
     return [
         f"{label}:"
     ]
 
-def idi(src, dst):
+def idi(instr, reg_alloc):
+    assert len(instr["args"]) == 1
+    assert len(instr["dest"]) == 1
+    src = reg_alloc[instr["args"][0]]
+    dest = reg_alloc[instr["args"][0]]
     return [
         f"movq {src}, {dest}"
     ]
 
+map = {
+    "add": add,
+    "mul": mul,
+    "sub": sub,
+    "div": div,
 
+    "eq": eq,
+    "lt": lt,
+    "gt": gt,
+    "le": lte,
+    "ge": gte,
+
+    "not": noti,
+    "and": andi,
+    "or": ori,
+
+    "jmp": jmp,
+    "br": br,
+    "call": call,
+    "ret": ret,
+
+    "nop": nop,
+    "print": ["TODO"],
+    "id": idi,
+
+    "free": ["TODO"],
+    "store": ["TODO"],
+    "load": ["TODO"],
+    "ptradd": ["TODO"],
+}
