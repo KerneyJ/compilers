@@ -204,6 +204,13 @@ def const(instr, reg_alloc):
         f"  movq ${value}, %{dest}"
     ]
 
+def printi(instr, reg_alloc):
+    assert "var_types" in instr
+    for vt in instr["var_types"]:
+        if vt != "bool" and vt != "int":
+            raise Exception(f"Instruction attempting to print non integer or boolean value: {vt}")
+    return []
+
 def todo(instr, reg_alloc):
     return [f"TODO {instr["op"]}"]
 
@@ -229,7 +236,7 @@ map = {
     "ret": ret,
 
     "nop": nop,
-    "print": todo,
+    "print": printi,
     "id": idi,
     "const": const,
 
@@ -238,3 +245,5 @@ map = {
     "load": todo,
     "ptradd": todo,
 }
+def todo(instr, reg_alloc):
+    return [f"TODO {instr["op"]}"]

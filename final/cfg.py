@@ -16,6 +16,7 @@ class bb:
         self.func_name = func_name
         self.dominates = []
         self.defs = set()
+        self.var_types = {} # maps variables this block defines to their types
 
     def __str__(self):
         s = "Name: " + self.name + " Parents: " + ", ".join([p.name for p in self.parents]) + " Children: " + ", ".join([k.name for k in self.kids]) + "\n"
@@ -251,6 +252,7 @@ def get_defs(blocks: dict[str, bb]):
         for instr in block.instrs:
             if "dest" in instr and instr["dest"] not in seen[block.func_name]:
                 defs.add(instr["dest"])
+                block.var_types[instr["dest"]] = instr["type"]
             if "f_args" in instr:
                 f_args = instr["f_args"]
                 for fg in f_args:

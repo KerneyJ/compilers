@@ -5,7 +5,8 @@ import liveness
 import regalloc
 import codegen
 
-GPR = ("r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15")
+GPR = ("r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15") # general purpose registers
+CACV = ("rdi", "rsi", "rdx", "rcx", "stack") # calling convention
 
 def assemble_text(func: list[str]):
     out = ""
@@ -41,7 +42,7 @@ def compile(prog):
     # register allocation
     liveness.instr_liveness(blocks)
     ig = regalloc.make_interference_graph(blocks)
-    reg_alloc = regalloc.register_allocation(ig, len(GPR))
+    reg_alloc = regalloc.register_allocation(ig, len(GPR)) # side effect is populating the type table block.var_type
     for func_name in reg_alloc:
         regalloc.register_assignment(GPR, reg_alloc[func_name])
 
@@ -49,7 +50,11 @@ def compile(prog):
     for func_name in funcs:
         f_blocks = funcs[func_name]
         f_regs = reg_alloc[func_name]
-        func_x86 = codegen.gen_func(f_blocks, f_regs)
+        # get typing info
+        var_types = {}
+        for b in f_blocks:
+            var_types |= b.var_types
+        func_x86 = codegen.gen_func(f_blocks, f_regs, {"var_types": var_types})
         compiled_funcs[func_name] = func_x86
 
     for func_name in compiled_funcs:
