@@ -41,6 +41,10 @@ def block_to_instrs(block: cfg.bb, reg_alloc: dict[str, str]) -> list[str]:
 
 def gen_func(blocks: list[cfg.bb], reg_alloc: dict[str, str], metadata): # metadata is a dictionary of bullshit
     # preprocessing usin meta data
+    func_name = blocks[0].func_name
+    if func_name == "main":
+        func_name = "_start"
+
     if "var_types" in metadata:
         var_types = metadata["var_types"]
         _instrument_prints(blocks, var_types)
@@ -53,7 +57,13 @@ def gen_func(blocks: list[cfg.bb], reg_alloc: dict[str, str], metadata): # metad
     sorted_blocks = sorted(instrs_by_block, key=lambda x: x[0])
     for num, block_instrs in sorted_blocks:
         x86func += block_instrs
-    return x86func
+
+    decl = [
+        f".globl {func_name}",
+        f".type {func_name}, @function"
+    ]
+
+    return {func_name: x86func, "decl": decl}
 
 def gen_prog():
     pass

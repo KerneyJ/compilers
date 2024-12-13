@@ -206,10 +206,19 @@ def const(instr, reg_alloc):
 
 def printi(instr, reg_alloc):
     assert "var_types" in instr
+    assert len(instr["args"]) == 1
     for vt in instr["var_types"]:
         if vt != "bool" and vt != "int":
             raise Exception(f"Instruction attempting to print non integer or boolean value: {vt}")
-    return []
+    arg = reg_alloc[instr["args"][0]]
+    assert "st" not in arg # TODO handle when variables are on the stack
+    return [
+        f"__stub__print",
+        f"  push %rdi",
+        f"  movq %{arg}, %rdi",
+        f"  call print",
+        f"  pop %rdi",
+    ]
 
 def todo(instr, reg_alloc):
     return [f"TODO {instr["op"]}"]
