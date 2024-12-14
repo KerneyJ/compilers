@@ -4,14 +4,74 @@ import cfg
 import liveness
 import regalloc
 import codegen
+import stubs
 
 GPR = ("r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15") # general purpose registers
 CACV = ("rdi", "rsi", "rdx", "rcx", "stack") # calling convention
 
-def assemble_text(func: list[str]):
+def stub_scan(func: list[str]):
+    stub_funcs = {}
+    for idx in range(len(func)):
+        instr = func[idx]
+        if "__stub__" in instr:
+            stub_func = instr[8:]
+            res = stubs.map[stub_func]()
+            stub_funcs[instr] = res
+    func = [instr for instr in func if "__stub__" not in instr]
+
+    return func, stub_funcs
+
+def _instr_lst_to_txt(instr_lst: list[str]):
     out = ""
-    for instr in func:
+    for instr in instr_lst:
         out += instr + "\n"
+    return out
+
+def assemble_functions(funcs: list[dict[str, str]]):
+    # here we need to compose the text and data sections
+    # decl and funcs go to the text section
+    # data goes to the data section
+    text = ".text\n"
+    func_strs = ""
+    decl_strs = ""
+    data = ".data\n"
+    out = ""
+    stub_funcs = {}
+    
+    # put together compiled functions
+    for func_name in funcs:
+        func_map = funcs[func_name]
+        if "decl" in func_map:
+            decl = func_map["decl"]
+            decl_strs += _instr_lst_to_txt(decl)
+        if "func" in func_map:
+            func = func_map["func"]
+            func, sf = stub_scan(func)
+            if "__stub__exit" in sf:
+                func += sf["__stub__exit"]["stub"]
+                del sf["__stub__exit"]
+            stub_funcs |= sf
+            func_strs += _instr_lst_to_txt(func) + "\n"
+        if "data" in func_map:
+            d = func_map["data"]
+            data += _instr_lst_to_txt(d)
+
+    # put together stub functions
+    for func_name in stub_funcs:
+        func_map = stub_funcs[func_name]
+        if "decl" in func_map:
+            decl = func_map["decl"]
+            decl_strs += _instr_lst_to_txt(decl)
+        if "func" in func_map:
+            func = func_map["func"]
+            func_strs += _instr_lst_to_txt(func) + "\n"
+        if "data" in func_map:
+            d = func_map["data"]
+            data += _instr_lst_to_txt(d)
+
+    text += decl_strs + "\n"
+    text += func_strs + "\n"
+    out += data + "\n" + text
     return out
 
 def compile(prog):
@@ -19,7 +79,6 @@ def compile(prog):
     funcs = {}
     func_args = {}
     compiled_funcs = {}
-    out = ".section .text\n.globl _start\n"
     for func in prog["functions"]:
         func_name = func["name"]
         func_blocks = cfg.make_bb(func)
@@ -57,10 +116,8 @@ def compile(prog):
         func_x86 = codegen.gen_func(f_blocks, f_regs, {"var_types": var_types})
         compiled_funcs[func_name] = func_x86
 
-    for func_name in compiled_funcs:
-        out += assemble_text(compiled_funcs[func_name]) + "\n"
-
-    out += "  movq $1, %rax\n  xorq %rbx, %rbx\n  int $0x80"
+    # put them all together
+    out = assemble_functions(compiled_funcs)
 
     return out
 

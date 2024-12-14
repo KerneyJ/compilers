@@ -28,7 +28,7 @@ def print():
         "  cmpq $0, %rax",
         "  jne convert_loop",     # Continue if not zero
 
-        "print_digits:"
+        "print_digits:",
         # Print digits from stack
         "  popq %rax",            # Get digit from stack
         "  movb %al, char_buf",     # Store digit in memory
@@ -77,6 +77,15 @@ def print():
 def scan():
     pass
 
+def exiti():
+    stub = [
+        "  movq $1, %rax",
+        "  xorq %rbx, %rbx",
+        "  int $0x80",
+    ]
+    return {"stub": stub}
+
 map = {
     "print": print,
+    "exit": exiti,
 }
