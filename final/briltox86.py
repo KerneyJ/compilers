@@ -1,3 +1,5 @@
+import constants
+
 # TODO need to check if the args/dest are stack positions or registers
 # arithmetic
 def add(instr, reg_alloc):
@@ -160,12 +162,21 @@ def call(instr, reg_alloc):
     # last need to insert pseudo instruction for pushing parameters on the stack, to handle later
     assert len(instr["funcs"]) == 1
     funcs = instr["funcs"]
-    return [
-        f"  call {funcs[0]}"
-    ]
+    ret = []
+    if "args" in instr:
+        if len(instr["args"]) > 4:
+            raise Exception("Need to push args to stack, todo implement that")
+        for idx in range(len(instr["args"])):
+            arg = reg_alloc[instr["args"][idx]]
+            ret.append(f"  movq %{arg}, %{constants.CACV[idx]}")
+    ret.append(f"  call {funcs[0]}")
+    if "dest" in instr:
+        dest = reg_alloc[instr["dest"]]
+        ret.append(f"  movq %rax, %{dest}")
+    return ret
 
 def ret(instr, reg_alloc):
-    if "arg" in instr and len(instr["args"]) > 0:
+    if "args" in instr and len(instr["args"]) > 0:
         assert len(instr["args"]) == 1
         arg = reg_alloc[instr["args"][0]]
         return [
@@ -193,9 +204,12 @@ def idi(instr, reg_alloc):
     assert len(instr["args"]) == 1
     src = reg_alloc[instr["args"][0]]
     dest = reg_alloc[instr["dest"]]
-    return [
-        f"  movq %{src}, %{dest}"
-    ]
+    if src == dest:
+        return []
+    else:
+        return [
+            f"  movq %{src}, %{dest}"
+        ]
 
 def const(instr, reg_alloc):
     dest = reg_alloc[instr["dest"]]
