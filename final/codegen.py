@@ -14,26 +14,18 @@ def _instrument_prints(blocks: list[cfg.bb], var_types):
             types = [var_types[var] for var in vars]
             b.instrs[idx]["var_types"] = types
 
-def insert_funcs(): # TODO add header functions for
-    pass
-
-def handle_call():
-    pass
-
-def handle_return():
-    pass
-
 def block_to_instrs(block: cfg.bb, reg_alloc: dict[str, str]) -> list[str]:
     ret = []
     if "entry" in block.name:
+        f_args = block.instrs[0]["f_args"]
+        if len(f_args) > 0:
+            block.instrs.insert(0, {"op": "handle_args", "args": f_args})
         if block.func_name == "main":
             ret += [f"_start:"]
         else:
             ret += [f"{block.func_name}:"]
     for instr in block.instrs:
         if "op" in instr:
-            if instr["op"] == "print":
-                pass
             ret += briltox86.map[instr["op"]](instr, reg_alloc)
         else:
             ret += briltox86.label(instr, reg_alloc)

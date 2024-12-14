@@ -234,6 +234,16 @@ def printi(instr, reg_alloc):
         f"  pop %rdi",
     ]
 
+def handle_args(instr, reg_alloc):
+    ret = []
+    for idx in range(len(instr["args"])):
+        arg = instr["args"][idx]
+        reg = constants.CACV[idx]
+        dest = reg_alloc[arg]
+        ret.append(f"  movq %{reg}, %{dest}")
+
+    return ret
+
 def todo(instr, reg_alloc):
     return [f"TODO {instr["op"]}"]
 
@@ -267,4 +277,7 @@ map = {
     "store": todo,
     "load": todo,
     "ptradd": todo,
+
+    # pseudo instructions
+    "handle_args": handle_args
 }
