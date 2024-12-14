@@ -268,5 +268,3 @@ map = {
     "load": todo,
     "ptradd": todo,
 }
-def todo(instr, reg_alloc):
-    return [f"TODO {instr["op"]}"]
