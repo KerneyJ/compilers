@@ -5,9 +5,7 @@ import liveness
 import regalloc
 import codegen
 import stubs
-
-GPR = ("r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15") # general purpose registers
-CACV = ("rdi", "rsi", "rdx", "rcx", "stack") # calling convention
+import constants
 
 def stub_scan(func: list[str]):
     stub_funcs = {}
@@ -101,9 +99,9 @@ def compile(prog):
     # register allocation
     liveness.instr_liveness(blocks)
     ig = regalloc.make_interference_graph(blocks)
-    reg_alloc = regalloc.register_allocation(ig, len(GPR)) # side effect is populating the type table block.var_type
+    reg_alloc = regalloc.register_allocation(ig, len(constants.GPR)) # side effect is populating the type table block.var_type
     for func_name in reg_alloc:
-        regalloc.register_assignment(GPR, reg_alloc[func_name])
+        regalloc.register_assignment(constants.GPR, reg_alloc[func_name])
 
     # code generation
     for func_name in funcs:
