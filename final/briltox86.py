@@ -147,7 +147,7 @@ def br(instr, reg_alloc):
     assert len(instr["labels"]) == 2
     assert len(instr["args"]) == 1
     label1 = instr["labels"][0]
-    label2 = instr["labels"][0]
+    label2 = instr["labels"][1]
     cond = reg_alloc[instr["args"][0]]
     return [
         f"  testq %{cond}, %{cond}",
