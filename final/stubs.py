@@ -75,7 +75,79 @@ def print():
     return {"func": func, "decl": decl, "data": data}
 
 def scan():
-    pass
+    func = [
+        "scan: ",
+        "  push %rbx",
+        "  push %rcx",
+        "  push %rdx",
+        "  push %rdi",
+        "  push %rsi",
+
+        # Read in put from stdin
+        "  movq $3, %rax",
+        "  movq $0, %rbx",
+        "  movq $buffer, %rcx",
+        "  movq $buffer_len, %rdx",
+
+        # move args for conversion
+        "  movq $buffer, %rsi",
+        "  xorq %rax, %rax",
+        "  xorq %rcx, %rcx",
+
+        "convert_loop:",
+        # Check for new line if found leave and clear buffer
+        "  movzbq (%rsi), %rbx",
+        "  cmpb $10, %bl",
+        "  je zb_loop_header",
+
+        # Convert character to digit
+        "  subp $48, %bl",
+        "  cmpb $9, %bl",
+        "  ja invalid_input",
+
+        # Multiple previous result by 10 add new digit
+        "  imulq $10, %rax",
+        "  addq %rbx, %rax",
+        
+        "  incl %rsi", # move to next character
+        "  incl %rcx", # increment digit counter
+        "  jmp convert_loop",
+
+        "invalid_input:", # exit of the character does not map to a valid digit
+        "  movq $1, %rax",
+        "  movq $1, %rbx",
+        "  int $0x80",
+
+        "zb_loop_header:", # zero out the buffer so it can be used again
+        "  movq $buffer, %rdi",
+        "  movq $buffer_len, %rcx",
+
+        "zero_buffer:",
+        "  movb $0, (%rdi)",
+        "  incl %rdi",
+        "  loop zero_buffer",
+
+        # pop everything and return, number in rax
+        "done:",
+        "  pop %rsi",
+        "  pop %rdi",
+        "  pop %rdx",
+        "  pop %rcx",
+        "  pop %rbx",
+        "  ret",
+    ]
+
+    decl = [
+        ".globl scan",
+        ".type scan, @function",
+    ]
+
+    data = [
+        "buffer: .space 20",
+        "buffer_len = . - buffer",
+    ]
+
+    return {"func": func, "decl": decl, "data": data}
 
 def exiti():
     stub = [
