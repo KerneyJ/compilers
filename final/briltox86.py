@@ -55,9 +55,9 @@ def eq(instr, reg_alloc):
     dest = reg_alloc[instr["dest"]]
     return [
         f"  cmpq %{arg1}, %{arg2}",
-        f"  xor %rax %rax",
+        f"  xor %rax, %rax",
         f"  setne %al",
-        f"  movq %rax %{dest}",
+        f"  movq %rax, %{dest}",
     ]
 
 def lt(instr, reg_alloc):
@@ -150,7 +150,7 @@ def br(instr, reg_alloc):
     label2 = instr["labels"][0]
     cond = reg_alloc[instr["args"][0]]
     return [
-        f"  testq %{cond}",
+        f"  testq %{cond}, %{cond}",
         f"  jne {label1}",
         f"  jmp {label2}",
     ]
@@ -244,6 +244,15 @@ def handle_args(instr, reg_alloc):
 
     return ret
 
+def handle_clobber_push(instr, reg_alloc):
+    clobber = list(instr["clobber"])
+    return [f"  pushq %{reg}" for reg in clobber]
+
+def handle_clobber_pop(instr, reg_alloc):
+    clobber = list(instr["clobber"])
+    clobber.reverse()
+    return [f"  popq %{reg}" for reg in clobber] + [f"__stub__reorder{len(clobber)}"]
+
 def todo(instr, reg_alloc):
     return [f"TODO {instr["op"]}"]
 
@@ -279,5 +288,7 @@ map = {
     "ptradd": todo,
 
     # pseudo instructions
-    "handle_args": handle_args
+    "handle_args": handle_args,
+    "handle_clobber_push": handle_clobber_push,
+    "handle_clobber_pop": handle_clobber_pop,
 }

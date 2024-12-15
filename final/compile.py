@@ -13,6 +13,11 @@ def stub_scan(func: list[str]):
         instr = func[idx]
         if "__stub__" in instr:
             stub_func = instr[8:]
+            if "reorder" in stub_func:
+                pos = int(stub_func[7:])
+                ret = func.pop(len(func) - pos - 2)
+                func.append(ret)
+                continue
             res = stubs.map[stub_func]()
             stub_funcs[instr] = res
     func = [instr for instr in func if "__stub__" not in instr]
@@ -111,7 +116,7 @@ def compile(prog):
         var_types = {}
         for b in f_blocks:
             var_types |= b.var_types
-        func_x86 = codegen.gen_func(f_blocks, f_regs, {"var_types": var_types})
+        func_x86 = codegen.gen_func(f_blocks, f_regs, {"var_types": var_types, "clobber": set([f_regs[var] for var in f_regs])})
         compiled_funcs[func_name] = func_x86
 
     # put them all together
@@ -123,4 +128,3 @@ if __name__ == "__main__":
     prog = json.load(sys.stdin)
     out = compile(prog)
     print(out)
-
