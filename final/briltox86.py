@@ -56,7 +56,7 @@ def eq(instr, reg_alloc):
     return [
         f"  cmpq %{arg1}, %{arg2}",
         f"  xor %rax, %rax",
-        f"  setne %al",
+        f"  sete %al",
         f"  movq %rax, %{dest}",
     ]
 
@@ -111,7 +111,10 @@ def gte(instr, reg_alloc):
 def noti(instr, reg_alloc):
     dest = reg_alloc[instr["dest"]]
     return [
-        f"  not %{dest}"
+        f"  xor %rax, %rax",
+        f"  test %{dest}, %{dest}",
+        f"  sete %al",
+        f"  movq %rax, %{dest}",
     ]
 
 def andi(instr, reg_alloc):
