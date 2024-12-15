@@ -54,8 +54,8 @@ def eq(instr, reg_alloc):
     arg2 = reg_alloc[instr["args"][1]]
     dest = reg_alloc[instr["dest"]]
     return [
-        f"  cmpq %{arg1}, %{arg2}",
         f"  xor %rax, %rax",
+        f"  cmpq %{arg1}, %{arg2}",
         f"  sete %al",
         f"  movq %rax, %{dest}",
     ]
@@ -66,8 +66,8 @@ def lt(instr, reg_alloc):
     arg2 = reg_alloc[instr["args"][1]]
     dest = reg_alloc[instr["dest"]]
     return [
-        f"  cmpq %{arg1}, %{arg2}",
         f"  xor %rax %rax",
+        f"  cmpq %{arg1}, %{arg2}",
         f"  setl %al",
         f"  movq %rax %{dest}",
     ]
@@ -78,8 +78,8 @@ def lte(instr, reg_alloc):
     arg2 = reg_alloc[instr["args"][1]]
     dest = reg_alloc[instr["dest"]]
     return [
-        f"  cmpq %{arg1}, %{arg2}",
         f"  xor %rax %rax",
+        f"  cmpq %{arg1}, %{arg2}",
         f"  setle %al",
         f"  movq %rax %{dest}",
     ]
@@ -90,8 +90,8 @@ def gt(instr, reg_alloc):
     arg2 = reg_alloc[instr["args"][1]]
     dest = reg_alloc[instr["dest"]]
     return [
-        f"  cmpq %{arg1}, %{arg2}",
         f"  xor %rax %rax",
+        f"  cmpq %{arg1}, %{arg2}",
         f"  setg %al",
         f"  movq %rax %{dest}",
     ]
@@ -102,8 +102,8 @@ def gte(instr, reg_alloc):
     arg2 = reg_alloc[instr["args"][1]]
     dest = reg_alloc[instr["dest"]]
     return [
-        f"  cmpq %{arg1}, %{arg2}",
         f"  xor %rax %rax",
+        f"  cmpq %{arg1}, %{arg2}",
         f"  setge %al",
         f"  movq %rax %{dest}",
     ]
