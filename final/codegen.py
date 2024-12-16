@@ -23,7 +23,11 @@ def block_to_instrs(block: cfg.bb, reg_alloc: dict[str, str], clobber: set[str])
         # handle arguments passed down
         f_args = block.instrs[0]["f_args"]
         if len(f_args) > 0:
-            block.instrs.insert(0, {"op": "handle_args", "args": f_args})
+            if block.func_name == "main":
+                for arg in f_args:
+                    block.instrs.insert(0, {"op": "handle_scan_arg", "arg": arg})
+            else:
+                block.instrs.insert(0, {"op": "handle_args", "args": f_args})
 
         if len(clobber) > 0 and block.func_name != "main": # this(first condition, but good sanity check) should almost always be true
             block.instrs.insert(0, {"op": "handle_clobber_push", "clobber": clobber})
@@ -77,6 +81,3 @@ def gen_func(blocks: list[cfg.bb], reg_alloc: dict[str, str], metadata): # metad
     ]
 
     return {"func": x86func, "decl": decl}
-
-def gen_prog():
-    pass

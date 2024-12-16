@@ -66,10 +66,10 @@ def lt(instr, reg_alloc):
     arg2 = reg_alloc[instr["args"][1]]
     dest = reg_alloc[instr["dest"]]
     return [
-        f"  xor %rax %rax",
-        f"  cmpq %{arg1}, %{arg2}",
+        f"  xor %rax, %rax",
+        f"  cmpq %{arg2}, %{arg1}",
         f"  setl %al",
-        f"  movq %rax %{dest}",
+        f"  movq %rax, %{dest}",
     ]
 
 def lte(instr, reg_alloc):
@@ -78,10 +78,10 @@ def lte(instr, reg_alloc):
     arg2 = reg_alloc[instr["args"][1]]
     dest = reg_alloc[instr["dest"]]
     return [
-        f"  xor %rax %rax",
-        f"  cmpq %{arg1}, %{arg2}",
+        f"  xor %rax, %rax",
+        f"  cmpq %{arg2}, %{arg1}",
         f"  setle %al",
-        f"  movq %rax %{dest}",
+        f"  movq %rax, %{dest}",
     ]
 
 def gt(instr, reg_alloc):
@@ -90,10 +90,10 @@ def gt(instr, reg_alloc):
     arg2 = reg_alloc[instr["args"][1]]
     dest = reg_alloc[instr["dest"]]
     return [
-        f"  xor %rax %rax",
-        f"  cmpq %{arg1}, %{arg2}",
+        f"  xor %rax, %rax",
+        f"  cmpq %{arg2}, %{arg1}",
         f"  setg %al",
-        f"  movq %rax %{dest}",
+        f"  movq %rax, %{dest}",
     ]
 
 def gte(instr, reg_alloc):
@@ -102,10 +102,10 @@ def gte(instr, reg_alloc):
     arg2 = reg_alloc[instr["args"][1]]
     dest = reg_alloc[instr["dest"]]
     return [
-        f"  xor %rax %rax",
-        f"  cmpq %{arg1}, %{arg2}",
+        f"  xor %rax, %rax",
+        f"  cmpq %{arg2}, %{arg1}",
         f"  setge %al",
-        f"  movq %rax %{dest}",
+        f"  movq %rax, %{dest}",
     ]
 
 def noti(instr, reg_alloc):
@@ -256,6 +256,14 @@ def handle_clobber_pop(instr, reg_alloc):
     clobber.reverse()
     return [f"  popq %{reg}" for reg in clobber] + [f"__stub__reorder{len(clobber)}"]
 
+def handle_scan_arg(instr, reg_alloc):
+    arg = reg_alloc[instr["arg"]]
+    return [
+        f"__stub__scan",
+        f"  call scan",
+        f"  movq %rax, %{arg}"
+    ]
+
 def todo(instr, reg_alloc):
     return [f"TODO {instr["op"]}"]
 
@@ -294,4 +302,5 @@ map = {
     "handle_args": handle_args,
     "handle_clobber_push": handle_clobber_push,
     "handle_clobber_pop": handle_clobber_pop,
+    "handle_scan_arg": handle_scan_arg,
 }

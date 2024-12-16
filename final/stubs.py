@@ -10,7 +10,7 @@ def print():
         "  xor %rax, %rax",
         "  movq %rdi, %rax",
 
-        "convert_loop:",
+        "convert_loop_print:",
         # Divide by 10 to get rightmost digit
         # Quotient in eax, remainder in edx
         "  xor %rdx, %rdx",
@@ -26,7 +26,7 @@ def print():
 
         # Check if number is zero
         "  cmpq $0, %rax",
-        "  jne convert_loop",     # Continue if not zero
+        "  jne convert_loop_print",     # Continue if not zero
 
         "print_digits:",
         # Print digits from stack
@@ -88,20 +88,21 @@ def scan():
         "  movq $0, %rbx",
         "  movq $buffer, %rcx",
         "  movq $buffer_len, %rdx",
+        "  int $0x80",
 
         # move args for conversion
         "  movq $buffer, %rsi",
         "  xorq %rax, %rax",
         "  xorq %rcx, %rcx",
 
-        "convert_loop:",
+        "convert_loop_scan:",
         # Check for new line if found leave and clear buffer
         "  movzbq (%rsi), %rbx",
         "  cmpb $10, %bl",
         "  je zb_loop_header",
 
         # Convert character to digit
-        "  subp $48, %bl",
+        "  subb $48, %bl",
         "  cmpb $9, %bl",
         "  ja invalid_input",
 
@@ -109,9 +110,9 @@ def scan():
         "  imulq $10, %rax",
         "  addq %rbx, %rax",
         
-        "  incl %rsi", # move to next character
-        "  incl %rcx", # increment digit counter
-        "  jmp convert_loop",
+        "  incq %rsi", # move to next character
+        "  incq %rcx", # increment digit counter
+        "  jmp convert_loop_scan",
 
         "invalid_input:", # exit of the character does not map to a valid digit
         "  movq $1, %rax",
@@ -124,7 +125,7 @@ def scan():
 
         "zero_buffer:",
         "  movb $0, (%rdi)",
-        "  incl %rdi",
+        "  incq %rdi",
         "  loop zero_buffer",
 
         # pop everything and return, number in rax
@@ -160,4 +161,5 @@ def exiti():
 map = {
     "print": print,
     "exit": exiti,
+    "scan": scan,
 }
