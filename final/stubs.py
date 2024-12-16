@@ -150,6 +150,59 @@ def scan():
 
     return {"func": func, "decl": decl, "data": data}
 
+def alloc():
+    func = [
+        "alloc: ",
+        "  push %rbx",
+        "  push %rcx",
+        "  push %rdx",
+
+        # multiply th input by 8 bytes(size of int)
+        "  movq $8, %rax",
+        "  imulq %rdi, %rax",
+        "  movq %rax, %rcx",
+
+        # Get inital program break
+        "  movq $45, %rax",
+        "  xorq %rbx, %rbx",
+        "  int $0x80",
+
+        # Store initial program break
+        "  movq %rax, %rdx",
+
+        # Increment %rbx by the buffer size
+        "  movq %rdx, %rbx",
+        "  addq %rcx, %rbx",
+
+        # Call brk to extend program break
+        "  movq $45, %rax",
+        "  int $0x80",
+
+        # Verify that brk was successful
+        "  cmpq $0, %rax",
+        "  jl allocation_error",
+
+        # Store program break pop and return
+        "  movq %rdx, %rax",
+        "  pop %rdx",
+        "  pop %rcx",
+        "  pop %rbx",
+        "  ret"
+
+        # If brk fails exit with error
+        "allocation_error: ",
+        "  movq $1, %rax",
+        "  movq $1, %rbx",
+        "  int $0x80",
+    ]
+
+    decl = [
+        ".globl alloc",
+        ".type alloc, @function",
+    ]
+
+    return {"func": func, "decl": decl}
+
 def exiti():
     stub = [
         "  movq $1, %rax",
@@ -160,6 +213,7 @@ def exiti():
 
 map = {
     "print": print,
-    "exit": exiti,
     "scan": scan,
+    "alloc": alloc,
+    "exit": exiti,
 }

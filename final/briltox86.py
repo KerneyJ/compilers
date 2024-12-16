@@ -214,13 +214,6 @@ def idi(instr, reg_alloc):
             f"  movq %{src}, %{dest}"
         ]
 
-def const(instr, reg_alloc):
-    dest = reg_alloc[instr["dest"]]
-    value = instr["value"]
-    return [
-        f"  movq ${value}, %{dest}"
-    ]
-
 def printi(instr, reg_alloc):
     assert "var_types" in instr
     assert len(instr["args"]) == 1
@@ -235,6 +228,24 @@ def printi(instr, reg_alloc):
         f"  movq %{arg}, %rdi",
         f"  call print",
         f"  pop %rdi",
+    ]
+
+def const(instr, reg_alloc):
+    dest = reg_alloc[instr["dest"]]
+    value = instr["value"]
+    return [
+        f"  movq ${value}, %{dest}"
+    ]
+
+def alloc(instr, reg_alloc):
+    assert len(instr["args"]) == 1
+    size = reg_alloc[instr["args"][0]]
+    dest = reg_alloc[instr["dest"]]
+    return [
+        f"__stub__alloc",
+        f"  movq %{size}, %rdi",
+        f"  call alloc",
+        f"  movq %rax, %{dest}",
     ]
 
 def handle_args(instr, reg_alloc):
@@ -293,6 +304,7 @@ map = {
     "id": idi,
     "const": const,
 
+    "alloc": alloc,
     "free": todo,
     "store": todo,
     "load": todo,
