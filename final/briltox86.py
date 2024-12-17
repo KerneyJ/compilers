@@ -147,7 +147,7 @@ def ori(instr, reg_alloc):
 
 def jmp(instr, reg_alloc):
     assert len(instr["labels"]) == 1
-    label = instr["labels"][0]
+    label = instr["rename_map"][instr["labels"][0]]
     return [
         f"  jmp {label}"
     ]
@@ -155,8 +155,8 @@ def jmp(instr, reg_alloc):
 def br(instr, reg_alloc):
     assert len(instr["labels"]) == 2
     assert len(instr["args"]) == 1
-    label1 = instr["labels"][0]
-    label2 = instr["labels"][1]
+    label1 = instr["rename_map"][instr["labels"][0]]
+    label2 = instr["rename_map"][instr["labels"][1]]
     cond = convert_stack_if_needed(reg_alloc[instr["args"][0]])
     return [
         f"  testq {cond}, {cond}",
@@ -204,7 +204,7 @@ def nop(instr, reg_alloc):
     ]
 
 def label(instr, reg_alloc):
-    label = instr["label"]
+    label = instr["rename_map"][instr["label"]]
     return [
         f"{label}:"
     ]
@@ -232,7 +232,7 @@ def printi(instr, reg_alloc):
         f"__stub__print",
         f"  push %rdi",
         f"  movq {arg}, %rdi",
-        f"  call print",
+        f"  call print_stb",
         f"  pop %rdi",
     ]
 
@@ -250,7 +250,7 @@ def alloc(instr, reg_alloc):
     return [
         f"__stub__alloc",
         f"  movq {size}, %rdi",
-        f"  call alloc",
+        f"  call alloc_stb",
         f"  movq %rax, {dest}",
     ]
 
@@ -310,7 +310,7 @@ def handle_scan_arg(instr, reg_alloc):
     arg = convert_stack_if_needed(reg_alloc[instr["arg"]])
     return [
         f"__stub__scan",
-        f"  call scan",
+        f"  call scan_stb",
         f"  movq %rax, {arg}"
     ]
 

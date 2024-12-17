@@ -1,6 +1,6 @@
 def print():
     func = [
-        "print: ", # (address, size)
+        "print_stb: ", # (address, size)
         "  push %rax",
         "  push %rbx",
         "  push %rcx",
@@ -10,7 +10,7 @@ def print():
         "  xor %rax, %rax",
         "  movq %rdi, %rax",
 
-        "convert_loop_print:",
+        "convert_loop_print_stb:",
         # Divide by 10 to get rightmost digit
         # Quotient in eax, remainder in edx
         "  xor %rdx, %rdx",
@@ -26,9 +26,9 @@ def print():
 
         # Check if number is zero
         "  cmpq $0, %rax",
-        "  jne convert_loop_print",     # Continue if not zero
+        "  jne convert_loop_print_stb",     # Continue if not zero
 
-        "print_digits:",
+        "print_digits_print_stb:",
         # Print digits from stack
         "  popq %rax",            # Get digit from stack
         "  movb %al, char_buf",     # Store digit in memory
@@ -43,7 +43,7 @@ def print():
         "  movq %rdi, %rcx",        # Restore the counter
 
         # Decrement counter and loop if more digits
-        "  loop print_digits",
+        "  loop print_digits_print_stb",
 
         # Print newline
         "  xor %rax, %rax",
@@ -64,8 +64,8 @@ def print():
     ]
 
     decl = [
-        ".globl print",
-        ".type print, @function",
+        ".globl print_stb",
+        ".type print_stb, @function",
     ]
 
     data = [
@@ -76,7 +76,7 @@ def print():
 
 def scan():
     func = [
-        "scan: ",
+        "scan_stb: ",
         "  push %rbx",
         "  push %rcx",
         "  push %rdx",
@@ -95,16 +95,16 @@ def scan():
         "  xorq %rax, %rax",
         "  xorq %rcx, %rcx",
 
-        "convert_loop_scan:",
+        "convert_loop_scan_stb:",
         # Check for new line if found leave and clear buffer
         "  movzbq (%rsi), %rbx",
         "  cmpb $10, %bl",
-        "  je zb_loop_header",
+        "  je zb_loop_header_scan_stb",
 
         # Convert character to digit
         "  subb $48, %bl",
         "  cmpb $9, %bl",
-        "  ja invalid_input",
+        "  ja invalid_input_scan_stb",
 
         # Multiple previous result by 10 add new digit
         "  imulq $10, %rax",
@@ -112,24 +112,24 @@ def scan():
         
         "  incq %rsi", # move to next character
         "  incq %rcx", # increment digit counter
-        "  jmp convert_loop_scan",
+        "  jmp convert_loop_scan_stb",
 
-        "invalid_input:", # exit of the character does not map to a valid digit
+        "invalid_input_scan_stb:", # exit of the character does not map to a valid digit
         "  movq $1, %rax",
         "  movq $1, %rbx",
         "  int $0x80",
 
-        "zb_loop_header:", # zero out the buffer so it can be used again
+        "zb_loop_header_scan_stb:", # zero out the buffer so it can be used again
         "  movq $buffer, %rdi",
         "  movq $buffer_len, %rcx",
 
-        "zero_buffer:",
+        "zero_buffer_scan_stb:",
         "  movb $0, (%rdi)",
         "  incq %rdi",
-        "  loop zero_buffer",
+        "  loop zero_buffer_scan_stb",
 
         # pop everything and return, number in rax
-        "scan_done:",
+        "done_scan_stb:",
         "  pop %rsi",
         "  pop %rdi",
         "  pop %rdx",
@@ -139,8 +139,8 @@ def scan():
     ]
 
     decl = [
-        ".globl scan",
-        ".type scan, @function",
+        ".globl scan_stb",
+        ".type scan_stb, @function",
     ]
 
     data = [
@@ -152,7 +152,7 @@ def scan():
 
 def alloc():
     func = [
-        "alloc: ",
+        "alloc_stb: ",
         "  push %rbx",
         "  push %rcx",
         "  push %rdx",
@@ -180,7 +180,7 @@ def alloc():
 
         # Verify that brk was successful
         "  cmpq $0, %rax",
-        "  jl allocation_error",
+        "  jl allocation_error_alloc_stub",
 
         # Store program break pop and return
         "  movq %rdx, %rax",
@@ -190,15 +190,15 @@ def alloc():
         "  ret",
 
         # If brk fails exit with error
-        "allocation_error: ",
+        "allocation_error_alloc_stub: ",
         "  movq $1, %rax",
         "  movq $1, %rbx",
         "  int $0x80",
     ]
 
     decl = [
-        ".globl alloc",
-        ".type alloc, @function",
+        ".globl alloc_stb",
+        ".type alloc_stb, @function",
     ]
 
     return {"func": func, "decl": decl}

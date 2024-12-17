@@ -14,7 +14,19 @@ def _instrument_prints(blocks: list[cfg.bb], var_types):
             types = [var_types[var] for var in vars]
             b.instrs[idx]["var_types"] = types
 
-def block_to_instrs(block: cfg.bb, reg_alloc: dict[str, str], clobber: set[str], vars_on_stack: int) -> list[str]:
+def _rename_labels(blocks: list[cfg.bb]): # label names such as loop and done are very common so need to rename them for
+    oname_nname = {} # maps old label names to new label names
+   # change the names of the labels first
+    for b in blocks:
+        for instr in b.instrs:
+            if "label" not in instr:
+                continue
+            label = instr["label"]
+            oname_nname[label] = f"{b.func_name}_{label}"
+    return oname_nname
+
+# convert a basic block into a list of x86 instructions
+def block_to_instrs(block: cfg.bb, reg_alloc: dict[str, str], rename_map: dict[str, str], clobber: set[str], vars_on_stack: int) -> list[str]:
     # list of instructions to be returned
     ret = []
 
@@ -52,6 +64,7 @@ def block_to_instrs(block: cfg.bb, reg_alloc: dict[str, str], clobber: set[str],
 
     # convert every instruction see briltox86
     for instr in block.instrs:
+        instr["rename_map"] = rename_map
         if "op" in instr:
             ret += briltox86.map[instr["op"]](instr, reg_alloc)
         else:
@@ -61,7 +74,7 @@ def block_to_instrs(block: cfg.bb, reg_alloc: dict[str, str], clobber: set[str],
     return ret
 
 def gen_func(blocks: list[cfg.bb], reg_alloc: dict[str, str], metadata): # metadata is a dictionary of bullshit
-    # preprocessing usin meta data
+    # preprocessing using meta data
     func_name = blocks[0].func_name
     if func_name == "main":
         func_name = "_start"
@@ -70,10 +83,12 @@ def gen_func(blocks: list[cfg.bb], reg_alloc: dict[str, str], metadata): # metad
         var_types = metadata["var_types"]
         _instrument_prints(blocks, var_types)
 
+    rename_map = _rename_labels(blocks)
+
     x86func = []
     instrs_by_block = []
     for block in blocks:
-        instrs_by_block.append((block.num, block_to_instrs(block, reg_alloc, metadata["clobber"], metadata["vars_on_stack"])))
+        instrs_by_block.append((block.num, block_to_instrs(block, reg_alloc, rename_map, metadata["clobber"], metadata["vars_on_stack"])))
 
     # put together all the basic blocks
     sorted_blocks = sorted(instrs_by_block, key=lambda x: x[0])
