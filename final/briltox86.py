@@ -248,6 +248,36 @@ def alloc(instr, reg_alloc):
         f"  movq %rax, %{dest}",
     ]
 
+def store(instr, reg_alloc):
+    assert len(instr["args"]) == 2
+    loc = reg_alloc[instr["args"][0]]
+    val = reg_alloc[instr["args"][1]]
+    return [
+        f"  movq %{val}, (%{loc})",
+    ]
+
+def load(instr, reg_alloc):
+    assert len(instr["args"]) == 1
+    ptr = reg_alloc[instr["args"][0]]
+    dest = reg_alloc[instr["dest"]]
+    return [
+        f"  movq (%{ptr}), %{dest}",
+    ]
+
+def ptradd(instr, reg_alloc):
+    assert len(instr["args"]) == 2
+    ptr = reg_alloc[instr["args"][0]]
+    inc = reg_alloc[instr["args"][1]]
+    dest = reg_alloc[instr["dest"]]
+    return [ # TODO simplify this
+        f"  movq %{inc}, %rax", # I think this set of instructions can be simplified
+        f"  imul $8, %rax",
+        f"  movq %rax, %{inc}",
+        f"  movq %{inc}, %rax",
+        f"  addq %{ptr}, %rax",
+        f"  movq %rax, %{dest}",
+    ]
+
 def handle_args(instr, reg_alloc):
     ret = []
     for idx in range(len(instr["args"])):
@@ -305,10 +335,10 @@ map = {
     "const": const,
 
     "alloc": alloc,
-    "free": todo,
-    "store": todo,
-    "load": todo,
-    "ptradd": todo,
+    "free": nop, # TODO not enough time to implement this
+    "store": store,
+    "load": load,
+    "ptradd": ptradd,
 
     # pseudo instructions
     "handle_args": handle_args,

@@ -187,7 +187,7 @@ def alloc():
         "  pop %rdx",
         "  pop %rcx",
         "  pop %rbx",
-        "  ret"
+        "  ret",
 
         # If brk fails exit with error
         "allocation_error: ",
