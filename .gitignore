@@ -2,6 +2,13 @@
 *.pdf
 *.csv
 *.txt
+*.o
+*.s
+*.bril
+*.bin
 venv/
 */__pycache__/*
 remove_nops/
+final/stubs/
+final/test/
+final/working/
