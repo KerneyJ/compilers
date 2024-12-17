@@ -12,3 +12,5 @@ remove_nops/
 final/stubs/
 final/test/
 final/working/
+final/mem/
+final/core/
