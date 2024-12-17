@@ -129,7 +129,7 @@ def scan():
         "  loop zero_buffer",
 
         # pop everything and return, number in rax
-        "done:",
+        "scan_done:",
         "  pop %rsi",
         "  pop %rdi",
         "  pop %rdx",
