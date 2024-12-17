@@ -14,7 +14,7 @@ def _instrument_prints(blocks: list[cfg.bb], var_types):
             types = [var_types[var] for var in vars]
             b.instrs[idx]["var_types"] = types
 
-def block_to_instrs(block: cfg.bb, reg_alloc: dict[str, str], clobber: set[str]) -> list[str]:
+def block_to_instrs(block: cfg.bb, reg_alloc: dict[str, str], clobber: set[str], vars_on_stack: int) -> list[str]:
     # list of instructions to be returned
     ret = []
 
@@ -32,6 +32,10 @@ def block_to_instrs(block: cfg.bb, reg_alloc: dict[str, str], clobber: set[str])
         if len(clobber) > 0 and block.func_name != "main": # this(first condition, but good sanity check) should almost always be true
             block.instrs.insert(0, {"op": "handle_clobber_push", "clobber": clobber})
 
+        # check for arguments that exist on the stack, if so allocate stack space
+        if vars_on_stack > 0:
+            block.instrs.insert(0, {"op": "handle_stack_vars_alloc", "num_vars": vars_on_stack})
+
         # change the name of the main function to _start for the linker
         if block.func_name == "main":
             ret += [f"_start:"]
@@ -41,6 +45,10 @@ def block_to_instrs(block: cfg.bb, reg_alloc: dict[str, str], clobber: set[str])
     # if the block has a ret statement then we need to pop all of the clobbered variables off the stack
     if "op" in block.term and block.term["op"] == "ret" and block.func_name != "main" and len(clobber) > 0:
         block.instrs.insert(len(block.instrs), {"op": "handle_clobber_pop", "clobber": clobber})
+
+    # fix the stack if there are stack vars
+    if "op" in block.term and block.term["op"] == "ret" and block.func_name != "main" and vars_on_stack > 0:
+        block.instrs.insert(len(block.instrs), {"op": "handle_stack_vars_free", "num_vars": vars_on_stack})
 
     # convert every instruction see briltox86
     for instr in block.instrs:
@@ -65,7 +73,7 @@ def gen_func(blocks: list[cfg.bb], reg_alloc: dict[str, str], metadata): # metad
     x86func = []
     instrs_by_block = []
     for block in blocks:
-        instrs_by_block.append((block.num, block_to_instrs(block, reg_alloc, metadata["clobber"])))
+        instrs_by_block.append((block.num, block_to_instrs(block, reg_alloc, metadata["clobber"], metadata["vars_on_stack"])))
 
     # put together all the basic blocks
     sorted_blocks = sorted(instrs_by_block, key=lambda x: x[0])

@@ -116,7 +116,9 @@ def compile(prog):
         var_types = {}
         for b in f_blocks:
             var_types |= b.var_types
-        func_x86 = codegen.gen_func(f_blocks, f_regs, {"var_types": var_types, "clobber": set([f_regs[var] for var in f_regs])})
+        clobber = set([f_regs[var] for var in f_regs])
+        vars_on_stack = len([f_regs[var] for var in f_regs if "st" in f_regs[var]])
+        func_x86 = codegen.gen_func(f_blocks, f_regs, {"var_types": var_types, "clobber": clobber, "vars_on_stack": vars_on_stack})
         compiled_funcs[func_name] = func_x86
 
     # put them all together

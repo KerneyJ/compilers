@@ -1,142 +1,148 @@
 import constants
 
+def convert_stack_if_needed(arg):
+    if "st" not in arg:
+        return arg
+    return f"{int(arg[2]) * 8}(%rsp)"
+
+
 # TODO need to check if the args/dest are stack positions or registers
 # arithmetic
 def add(instr, reg_alloc):
     assert len(instr["args"]) == 2
-    arg1 = reg_alloc[instr["args"][0]]
-    arg2 = reg_alloc[instr["args"][1]]
-    dest = reg_alloc[instr["dest"]]
+    arg1 = convert_stack_if_needed(reg_alloc[instr["args"][0]])
+    arg2 = convert_stack_if_needed(reg_alloc[instr["args"][1]])
+    dest = convert_stack_if_needed(reg_alloc[instr["dest"]])
     return [
-        f"  movq %{arg1}, %rax",
-        f"  addq %{arg2}, %rax",
-        f"  movq %rax, %{dest}"
+        f"  movq {arg1}, %rax",
+        f"  addq {arg2}, %rax",
+        f"  movq %rax, {dest}"
     ]
 
 def sub(instr, reg_alloc):
     assert len(instr["args"]) == 2
-    arg1 = reg_alloc[instr["args"][0]]
-    arg2 = reg_alloc[instr["args"][1]]
-    dest = reg_alloc[instr["dest"]]
+    arg1 = convert_stack_if_needed(reg_alloc[instr["args"][0]])
+    arg2 = convert_stack_if_needed(reg_alloc[instr["args"][1]])
+    dest = convert_stack_if_needed(reg_alloc[instr["dest"]])
     return [
-        f"  movq %{arg1}, %rax",
-        f"  subq %{arg2}, %rax",
-        f"  movq %rax, %{dest}"
+        f"  movq {arg1}, %rax",
+        f"  subq {arg2}, %rax",
+        f"  movq %rax, {dest}"
     ]
 
 def mul(instr, reg_alloc):
     assert len(instr["args"]) == 2
-    arg1 = reg_alloc[instr["args"][0]]
-    arg2 = reg_alloc[instr["args"][1]]
-    dest = reg_alloc[instr["dest"]]
+    arg1 = convert_stack_if_needed(reg_alloc[instr["args"][0]])
+    arg2 = convert_stack_if_needed(reg_alloc[instr["args"][1]])
+    dest = convert_stack_if_needed(reg_alloc[instr["dest"]])
     return [
-        f"  movq %{arg1}, %rax",
-        f"  imul %{arg2}, %rax",
-        f"  movq %rax, %{dest}"
+        f"  movq {arg1}, %rax",
+        f"  imul {arg2}, %rax",
+        f"  movq %rax, {dest}"
     ]
 
 def div(instr, reg_alloc):
     assert len(instr["args"]) == 2
-    arg1 = reg_alloc[instr["args"][0]]
-    arg2 = reg_alloc[instr["args"][1]]
-    dest = reg_alloc[instr["dest"]]
+    arg1 = convert_stack_if_needed(reg_alloc[instr["args"][0]])
+    arg2 = convert_stack_if_needed(reg_alloc[instr["args"][1]])
+    dest = convert_stack_if_needed(reg_alloc[instr["dest"]])
     return [
-        f"  movq %{arg1}, %rax",
+        f"  movq {arg1}, %rax",
         f"  cltd",
-        f"  divq %{arg2}",
-        f"  movq %rax, %{dest}"
+        f"  divq {arg2}",
+        f"  movq %rax, {dest}"
     ]
 
 # comparrison
 def eq(instr, reg_alloc):
     assert len(instr["args"]) == 2
-    arg1 = reg_alloc[instr["args"][0]]
-    arg2 = reg_alloc[instr["args"][1]]
-    dest = reg_alloc[instr["dest"]]
+    arg1 = convert_stack_if_needed(reg_alloc[instr["args"][0]])
+    arg2 = convert_stack_if_needed(reg_alloc[instr["args"][1]])
+    dest = convert_stack_if_needed(reg_alloc[instr["dest"]])
     return [
         f"  xor %rax, %rax",
-        f"  cmpq %{arg1}, %{arg2}",
+        f"  cmpq {arg1}, {arg2}",
         f"  sete %al",
-        f"  movq %rax, %{dest}",
+        f"  movq %rax, {dest}",
     ]
 
 def lt(instr, reg_alloc):
     assert len(instr["args"]) == 2
-    arg1 = reg_alloc[instr["args"][0]]
-    arg2 = reg_alloc[instr["args"][1]]
-    dest = reg_alloc[instr["dest"]]
+    arg1 = convert_stack_if_needed(reg_alloc[instr["args"][0]])
+    arg2 = convert_stack_if_needed(reg_alloc[instr["args"][1]])
+    dest = convert_stack_if_needed(reg_alloc[instr["dest"]])
     return [
         f"  xor %rax, %rax",
-        f"  cmpq %{arg2}, %{arg1}",
+        f"  cmpq {arg2}, {arg1}",
         f"  setl %al",
-        f"  movq %rax, %{dest}",
+        f"  movq %rax, {dest}",
     ]
 
 def lte(instr, reg_alloc):
     assert len(instr["args"]) == 2
-    arg1 = reg_alloc[instr["args"][0]]
-    arg2 = reg_alloc[instr["args"][1]]
-    dest = reg_alloc[instr["dest"]]
+    arg1 = convert_stack_if_needed(reg_alloc[instr["args"][0]])
+    arg2 = convert_stack_if_needed(reg_alloc[instr["args"][1]])
+    dest = convert_stack_if_needed(reg_alloc[instr["dest"]])
     return [
         f"  xor %rax, %rax",
-        f"  cmpq %{arg2}, %{arg1}",
+        f"  cmpq {arg2}, {arg1}",
         f"  setle %al",
-        f"  movq %rax, %{dest}",
+        f"  movq %rax, {dest}",
     ]
 
 def gt(instr, reg_alloc):
     assert len(instr["args"]) == 2
-    arg1 = reg_alloc[instr["args"][0]]
-    arg2 = reg_alloc[instr["args"][1]]
-    dest = reg_alloc[instr["dest"]]
+    arg1 = convert_stack_if_needed(reg_alloc[instr["args"][0]])
+    arg2 = convert_stack_if_needed(reg_alloc[instr["args"][1]])
+    dest = convert_stack_if_needed(reg_alloc[instr["dest"]])
     return [
         f"  xor %rax, %rax",
-        f"  cmpq %{arg2}, %{arg1}",
+        f"  cmpq {arg2}, {arg1}",
         f"  setg %al",
-        f"  movq %rax, %{dest}",
+        f"  movq %rax, {dest}",
     ]
 
 def gte(instr, reg_alloc):
     assert len(instr["args"]) == 2
-    arg1 = reg_alloc[instr["args"][0]]
-    arg2 = reg_alloc[instr["args"][1]]
-    dest = reg_alloc[instr["dest"]]
+    arg1 = convert_stack_if_needed(reg_alloc[instr["args"][0]])
+    arg2 = convert_stack_if_needed(reg_alloc[instr["args"][1]])
+    dest = convert_stack_if_needed(reg_alloc[instr["dest"]])
     return [
         f"  xor %rax, %rax",
-        f"  cmpq %{arg2}, %{arg1}",
+        f"  cmpq {arg2}, {arg1}",
         f"  setge %al",
-        f"  movq %rax, %{dest}",
+        f"  movq %rax, {dest}",
     ]
 
 def noti(instr, reg_alloc):
-    dest = reg_alloc[instr["dest"]]
+    dest = convert_stack_if_needed(reg_alloc[instr["dest"]])
     return [
         f"  xor %rax, %rax",
-        f"  test %{dest}, %{dest}",
+        f"  test {dest}, {dest}",
         f"  sete %al",
-        f"  movq %rax, %{dest}",
+        f"  movq %rax, {dest}",
     ]
 
 def andi(instr, reg_alloc):
     assert len(instr["args"]) == 2
-    arg1 = reg_alloc[instr["args"][0]]
-    arg2 = reg_alloc[instr["args"][1]]
-    dest = reg_alloc[instr["dest"]]
+    arg1 = convert_stack_if_needed(reg_alloc[instr["args"][0]])
+    arg2 = convert_stack_if_needed(reg_alloc[instr["args"][1]])
+    dest = convert_stack_if_needed(reg_alloc[instr["dest"]])
     return [
-        f"  movq %{arg1}, %rax",
-        f"  andq %{arg2}, %rax",
-        f"  movq %rax, %{dest}"
+        f"  movq {arg1}, %rax",
+        f"  andq {arg2}, %rax",
+        f"  movq %rax, {dest}"
     ]
 
 def ori(instr, reg_alloc):
     assert len(instr["args"]) == 2
-    arg1 = reg_alloc[instr["args"][0]]
-    arg2 = reg_alloc[instr["args"][1]]
-    dest = reg_alloc[instr["dest"]]
+    arg1 = convert_stack_if_needed(reg_alloc[instr["args"][0]])
+    arg2 = convert_stack_if_needed(reg_alloc[instr["args"][1]])
+    dest = convert_stack_if_needed(reg_alloc[instr["dest"]])
     return [
-        f"  movq %{arg1}, %rax",
-        f"  orq %{arg2}, %rax",
-        f"  movq %rax, %{dest}"
+        f"  movq {arg1}, %rax",
+        f"  orq {arg2}, %rax",
+        f"  movq %rax, {dest}"
     ]
 
 def jmp(instr, reg_alloc):
@@ -151,9 +157,9 @@ def br(instr, reg_alloc):
     assert len(instr["args"]) == 1
     label1 = instr["labels"][0]
     label2 = instr["labels"][1]
-    cond = reg_alloc[instr["args"][0]]
+    cond = convert_stack_if_needed(reg_alloc[instr["args"][0]])
     return [
-        f"  testq %{cond}, %{cond}",
+        f"  testq {cond}, {cond}",
         f"  jne {label1}",
         f"  jmp {label2}",
     ]
@@ -170,20 +176,20 @@ def call(instr, reg_alloc):
         if len(instr["args"]) > 4:
             raise Exception("Need to push args to stack, todo implement that")
         for idx in range(len(instr["args"])):
-            arg = reg_alloc[instr["args"][idx]]
-            ret.append(f"  movq %{arg}, %{constants.CACV[idx]}")
+            arg = convert_stack_if_needed(reg_alloc[instr["args"][idx]])
+            ret.append(f"  movq {arg}, {constants.CACV[idx]}")
     ret.append(f"  call {funcs[0]}")
     if "dest" in instr:
-        dest = reg_alloc[instr["dest"]]
-        ret.append(f"  movq %rax, %{dest}")
+        dest = convert_stack_if_needed(reg_alloc[instr["dest"]])
+        ret.append(f"  movq %rax, {dest}")
     return ret
 
 def ret(instr, reg_alloc):
     if "args" in instr and len(instr["args"]) > 0:
         assert len(instr["args"]) == 1
-        arg = reg_alloc[instr["args"][0]]
+        arg = convert_stack_if_needed(reg_alloc[instr["args"][0]])
         return [
-            f"  movq %{arg}, %rax",
+            f"  movq {arg}, %rax",
             f"  ret"
         ]
     else:
@@ -205,13 +211,13 @@ def label(instr, reg_alloc):
 
 def idi(instr, reg_alloc):
     assert len(instr["args"]) == 1
-    src = reg_alloc[instr["args"][0]]
-    dest = reg_alloc[instr["dest"]]
+    src = convert_stack_if_needed(reg_alloc[instr["args"][0]])
+    dest = convert_stack_if_needed(reg_alloc[instr["dest"]])
     if src == dest:
         return []
     else:
         return [
-            f"  movq %{src}, %{dest}"
+            f"  movq {src}, {dest}"
         ]
 
 def printi(instr, reg_alloc):
@@ -220,62 +226,65 @@ def printi(instr, reg_alloc):
     for vt in instr["var_types"]:
         if vt != "bool" and vt != "int":
             raise Exception(f"Instruction attempting to print non integer or boolean value: {vt}")
-    arg = reg_alloc[instr["args"][0]]
+    arg = convert_stack_if_needed(reg_alloc[instr["args"][0]])
     assert "st" not in arg # TODO handle when variables are on the stack
     return [
         f"__stub__print",
         f"  push %rdi",
-        f"  movq %{arg}, %rdi",
+        f"  movq {arg}, %rdi",
         f"  call print",
         f"  pop %rdi",
     ]
 
 def const(instr, reg_alloc):
-    dest = reg_alloc[instr["dest"]]
+    dest = convert_stack_if_needed(reg_alloc[instr["dest"]])
     value = instr["value"]
     return [
-        f"  movq ${value}, %{dest}"
+        f"  movq ${value}, {dest}"
     ]
 
 def alloc(instr, reg_alloc):
     assert len(instr["args"]) == 1
-    size = reg_alloc[instr["args"][0]]
-    dest = reg_alloc[instr["dest"]]
+    size = convert_stack_if_needed(reg_alloc[instr["args"][0]])
+    dest = convert_stack_if_needed(reg_alloc[instr["dest"]])
     return [
         f"__stub__alloc",
-        f"  movq %{size}, %rdi",
+        f"  movq {size}, %rdi",
         f"  call alloc",
-        f"  movq %rax, %{dest}",
+        f"  movq %rax, {dest}",
     ]
 
 def store(instr, reg_alloc):
     assert len(instr["args"]) == 2
-    loc = reg_alloc[instr["args"][0]]
-    val = reg_alloc[instr["args"][1]]
+    loc = convert_stack_if_needed(reg_alloc[instr["args"][0]])
+    val = convert_stack_if_needed(reg_alloc[instr["args"][1]])
     return [
-        f"  movq %{val}, (%{loc})",
+        f"  movq {val}, ({loc})",
     ]
 
 def load(instr, reg_alloc):
     assert len(instr["args"]) == 1
-    ptr = reg_alloc[instr["args"][0]]
-    dest = reg_alloc[instr["dest"]]
-    return [
-        f"  movq (%{ptr}), %{dest}",
-    ]
+    ptr = convert_stack_if_needed(reg_alloc[instr["args"][0]])
+    dest = convert_stack_if_needed(reg_alloc[instr["dest"]])
+    if "(" not in ptr:
+        return [
+            f"  movq ({ptr}), {dest}",
+        ]
+    else:
+        return [
+            f"  movq {ptr}, %rax",
+            f"  movq %rax, {dest}",
+        ]
 
 def ptradd(instr, reg_alloc):
     assert len(instr["args"]) == 2
-    ptr = reg_alloc[instr["args"][0]]
-    inc = reg_alloc[instr["args"][1]]
-    dest = reg_alloc[instr["dest"]]
-    return [ # TODO simplify this
-        f"  movq %{inc}, %rax", # I think this set of instructions can be simplified
-        f"  imul $8, %rax",
-        f"  movq %rax, %{inc}",
-        f"  movq %{inc}, %rax",
-        f"  addq %{ptr}, %rax",
-        f"  movq %rax, %{dest}",
+    ptr = convert_stack_if_needed(reg_alloc[instr["args"][0]])
+    inc = convert_stack_if_needed(reg_alloc[instr["args"][1]])
+    dest = convert_stack_if_needed(reg_alloc[instr["dest"]])
+    return [
+        f"  imul $8, {inc}, {inc}",
+        f"  movq {inc}, {dest}",
+        f"  addq {ptr}, {dest}",
     ]
 
 def handle_args(instr, reg_alloc):
@@ -283,26 +292,40 @@ def handle_args(instr, reg_alloc):
     for idx in range(len(instr["args"])):
         arg = instr["args"][idx]
         reg = constants.CACV[idx]
-        dest = reg_alloc[arg]
-        ret.append(f"  movq %{reg}, %{dest}")
+        dest = convert_stack_if_needed(reg_alloc[arg])
+        ret.append(f"  movq {reg}, {dest}")
 
     return ret
 
 def handle_clobber_push(instr, reg_alloc):
     clobber = list(instr["clobber"])
-    return [f"  pushq %{reg}" for reg in clobber]
+    return [f"  pushq {reg}" for reg in clobber]
 
 def handle_clobber_pop(instr, reg_alloc):
     clobber = list(instr["clobber"])
     clobber.reverse()
-    return [f"  popq %{reg}" for reg in clobber] + [f"__stub__reorder{len(clobber)}"]
+    return [f"  popq {reg}" for reg in clobber] + [f"__stub__reorder{len(clobber)}"]
 
 def handle_scan_arg(instr, reg_alloc):
-    arg = reg_alloc[instr["arg"]]
+    arg = convert_stack_if_needed(reg_alloc[instr["arg"]])
     return [
         f"__stub__scan",
         f"  call scan",
-        f"  movq %rax, %{arg}"
+        f"  movq %rax, {arg}"
+    ]
+
+def handle_stack_vars_alloc(instr, reg_alloc):
+    num_vars = instr["num_vars"]
+    return [ # TODO simplify this math I know theres a way to subtract immediates in one instruction
+        f"  push %rsp",
+        f"  subq ${8 * num_vars}, %rsp", # 8 bytes per slot
+    ]
+
+def handle_stack_vars_free(instr, reg_alloc):
+    num_vars = instr["num_vars"]
+    return [
+        f"  addq ${8 * num_vars}, %rsp",
+        f"  pop %rsp",
     ]
 
 def todo(instr, reg_alloc):
@@ -345,4 +368,6 @@ map = {
     "handle_clobber_push": handle_clobber_push,
     "handle_clobber_pop": handle_clobber_pop,
     "handle_scan_arg": handle_scan_arg,
+    "handle_stack_vars_alloc": handle_stack_vars_alloc,
+    "handle_stack_vars_free": handle_stack_vars_free,
 }
